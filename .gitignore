@@ -24,6 +24,7 @@ bin/classes
 bin/res
 bin/jarlist.cache
 *.cache
+.cxx
 
 # Local configuration file (sdk path, etc)
 local.properties
