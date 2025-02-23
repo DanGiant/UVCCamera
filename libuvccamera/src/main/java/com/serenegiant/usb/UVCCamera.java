@@ -125,8 +125,8 @@ public class UVCCamera {
 	}
 
 	private UsbControlBlock mCtrlBlock;
-    protected long mControlSupports;			// カメラコントロールでサポートしている機能フラグ
-    protected long mProcSupports;				// プロセッシングユニットでサポートしている機能フラグ
+    protected long mControlSupports;			// カメラコントロールでサポートしている機能フラグ(相机控制支持标志)
+    protected long mProcSupports;				// プロセッシングユニットでサポートしている機能フラグ(处理单元支持标志)
     protected int mCurrentFrameFormat = FRAME_FORMAT_MJPEG;
 	protected int mCurrentWidth = DEFAULT_PREVIEW_WIDTH, mCurrentHeight = DEFAULT_PREVIEW_HEIGHT;
 	protected float mCurrentBandwidthFactor = DEFAULT_BANDWIDTH;
@@ -173,7 +173,7 @@ public class UVCCamera {
     protected int mAnalogVideoLockStateMin, mAnalogVideoLockStateMax, mAnalogVideoLockStateDef;
     // until here
     /**
-     * the sonctructor of this class should be call within the thread that has a looper
+     * the constructor of this class should be call within the thread that has a looper
      * (UI thread or a thread that called Looper.prepare)
      */
     public UVCCamera() {
@@ -237,7 +237,7 @@ public class UVCCamera {
     	stopPreview();
     	if (mNativePtr != 0) {
     		nativeRelease(mNativePtr);
-//    		mNativePtr = 0;	// nativeDestroyを呼ぶのでここでクリアしちゃダメ
+//    		mNativePtr = 0;	// nativeDestroyを呼ぶのでここでクリアしちゃダメ(不要在这里清除，因为会调用 nativeDestroy)
     	}
     	if (mCtrlBlock != null) {
 			mCtrlBlock.close();
@@ -905,12 +905,12 @@ public class UVCCamera {
 	public synchronized void updateCameraParams() {
     	if (mNativePtr != 0) {
     		if ((mControlSupports == 0) || (mProcSupports == 0)) {
-        		// サポートしている機能フラグを取得
+        		// サポートしている機能フラグを取得 (获取支持的功能标志)
     			if (mControlSupports == 0)
     				mControlSupports = nativeGetCtrlSupports(mNativePtr);
     			if (mProcSupports == 0)
     				mProcSupports = nativeGetProcSupports(mNativePtr);
-    	    	// 設定値を取得
+    	    	// 設定値を取得 (获取设置值)
     	    	if ((mControlSupports != 0) && (mProcSupports != 0)) {
 	    	    	nativeUpdateBrightnessLimit(mNativePtr);
 	    	    	nativeUpdateContrastLimit(mNativePtr);

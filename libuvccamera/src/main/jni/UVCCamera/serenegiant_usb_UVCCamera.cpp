@@ -125,7 +125,7 @@ static ID_TYPE nativeCreate(JNIEnv *env, jobject thiz) {
 	RETURN(reinterpret_cast<ID_TYPE>(camera), ID_TYPE);
 }
 
-// native側のカメラオブジェクトを破棄
+// native側のカメラオブジェクトを破棄 (销毁原生相机对象)
 static void nativeDestroy(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera) {
 
@@ -139,7 +139,7 @@ static void nativeDestroy(JNIEnv *env, jobject thiz,
 }
 
 //======================================================================
-// カメラへ接続
+// カメラへ接続 (连接到相机)
 static jint nativeConnect(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera,
 	jint vid, jint pid, jint fd,
@@ -157,7 +157,7 @@ static jint nativeConnect(JNIEnv *env, jobject thiz,
 	RETURN(result, jint);
 }
 
-// カメラとの接続を解除
+// カメラとの接続を解除 (断开与相机的连接)
 static jint nativeRelease(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera) {
 
@@ -214,7 +214,7 @@ static jobject nativeGetSupportedSize(JNIEnv *env, jobject thiz,
 }
 
 //======================================================================
-// プレビュー画面の大きさをセット
+// プレビュー画面の大きさをセット (设置预览屏幕尺寸)
 static jint nativeSetPreviewSize(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera, jint width, jint height, jint min_fps, jint max_fps, jint mode, jfloat bandwidth) {
 

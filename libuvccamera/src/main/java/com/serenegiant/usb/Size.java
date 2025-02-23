@@ -32,12 +32,14 @@ public class Size implements Parcelable {
 	//
 	/**
 	 * native側のuvc_raw_format_tの値, こっちは主にlibuvc用
+	 * native 端 uvc_raw_format_t 的值，这个主要针对 libuvc
 	 * 9999 is still image
 	 */
 	public int type;
 	/**
 	 * native側のraw_frame_tの値, androusb用,
 	 * libuvcは対応していない
+	 * native 端 raw_frame_t 的值，androusb 用, libuvc 不支持
 	 */
 	public int frame_type;
 	public int index;
@@ -47,6 +49,7 @@ public class Size implements Parcelable {
 	public int frameIntervalIndex;
 	public int[] intervals;
 	// ここ以下はframeIntervalTypeとintervalsから#updateFrameRateで計算する
+	// 以下是根据frameIntervalType和间隔使用#updateFrameRate进行计算的。
 	public float[] fps;
 	private String frameRates;
 
@@ -124,7 +127,7 @@ public class Size implements Parcelable {
 	}
 
 	/**
-	 * コピーコンストラクタ
+	 * コピーコンストラクタ (复制构造函数)
 	 * @param other
 	 */
 	public Size(final Size other) {
@@ -147,6 +150,7 @@ public class Size implements Parcelable {
 
 	private Size(final Parcel source) {
 		// 読み取り順はwriteToParcelでの書き込み順と同じでないとダメ
+		// 读取顺序必须与writeToParcel中的写入顺序相同
 		type = source.readInt();
 		frame_type = source.readInt();
 		index = source.readInt();
