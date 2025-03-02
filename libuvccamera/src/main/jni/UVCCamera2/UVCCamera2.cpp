@@ -132,15 +132,15 @@ void UVCCamera2::clearCameraParams() {
 
 //======================================================================
 /**
- * カメラへ接続する
+ * 连接相机
  */
-int UVCCamera2::connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs) {
+int UVCCamera2::connect(int vid, int pid, int fd, int busNum, int devAddress, const char *usbFs) {
 	ENTER();
 	uvc_error_t result = UVC_ERROR_BUSY;
 	if (!mDeviceHandle && fd) {
 		if (mUsbFs)
 			free(mUsbFs);
-		mUsbFs = strdup(usbfs);
+		mUsbFs = strdup(usbFs);
 		if (UNLIKELY(!mContext)) {
 			result = uvc_init2(&mContext, NULL, mUsbFs);
 //			libusb_set_debug(mContext->usb_ctx, LIBUSB_LOG_LEVEL_DEBUG);
@@ -149,17 +149,17 @@ int UVCCamera2::connect(int vid, int pid, int fd, int busnum, int devaddr, const
 				RETURN(result, int);
 			}
 		}
-		// カメラ機能フラグをクリア
+		// 清除相机功能标志
 		clearCameraParams();
 		fd = dup(fd);
-		// 指定したvid,idを持つデバイスを検索, 見つかれば0を返してmDeviceに見つかったデバイスをセットする(既に1回uvc_ref_deviceを呼んである)
+		// 根据指定的vid和id搜索设备，如果找到则返回0，并将找到的设备设置为mDevice (uvc_ref_device已经被调用过一次)
 //		result = uvc_find_device2(mContext, &mDevice, vid, pid, NULL, fd);
-		result = uvc_get_device_with_fd(mContext, &mDevice, vid, pid, NULL, fd, busnum, devaddr);
+		result = uvc_get_device_with_fd(mContext, &mDevice, vid, pid, NULL, fd, busNum, devAddress);
 		if (LIKELY(!result)) {
-			// カメラのopen処理
+			// 相机打开过程
 			result = uvc_open(mDevice, &mDeviceHandle);
 			if (LIKELY(!result)) {
-				// open出来た時
+				// 当打开时
 #if LOCAL_DEBUG
 				uvc_print_diag(mDeviceHandle, stderr);
 #endif
@@ -168,10 +168,10 @@ int UVCCamera2::connect(int vid, int pid, int fd, int busnum, int devaddr, const
 				mButtonCallback = new UVCButtonCallback(mDeviceHandle);
 				mPreview = new UVCPreview(mDeviceHandle);
 			} else {
-				// open出来なかった時
+				// 当你无法打开
 				LOGE("could not open camera:err=%d", result);
 				uvc_unref_device(mDevice);
-//				SAFE_DELETE(mDevice);	// 参照カウンタが0ならuvc_unref_deviceでmDeviceがfreeされるから不要 XXX クラッシュ, 既に破棄されているのを再度破棄しようとしたからみたい
+//				SAFE_DELETE(mDevice);	如果引用计数器为0，mDevice会被uvc_unref_device释放，所以不会发生XXX Crash，似乎是由于试图破坏某个已经被破坏的东西造成的
 				mDevice = NULL;
 				mDeviceHandle = NULL;
 				close(fd);
@@ -181,7 +181,7 @@ int UVCCamera2::connect(int vid, int pid, int fd, int busnum, int devaddr, const
 			close(fd);
 		}
 	} else {
-		// カメラが既にopenしている時
+		// 当相机已打开时
 		LOGW("camera is already opened. you should release first");
 	}
 	RETURN(result, int);
@@ -191,15 +191,15 @@ int UVCCamera2::connect(int vid, int pid, int fd, int busnum, int devaddr, const
 int UVCCamera2::release() {
 	ENTER();
 	stopPreview();
-	// カメラのclose処理
+	// 处理相机关闭
 	if (LIKELY(mDeviceHandle)) {
 		MARK("カメラがopenしていたら開放する");
-		// ステータスコールバックオブジェクトを破棄
+		// 销毁状态回调对象
 		SAFE_DELETE(mStatusCallback);
 		SAFE_DELETE(mButtonCallback);
-		// プレビューオブジェクトを破棄
+		// 销毁预览对象
 		SAFE_DELETE(mPreview);
-		// カメラをclose
+		// 关闭相机
 		uvc_close(mDeviceHandle);
 		mDeviceHandle = NULL;
 	}
@@ -208,7 +208,7 @@ int UVCCamera2::release() {
 		uvc_unref_device(mDevice);
 		mDevice = NULL;
 	}
-	// カメラ機能フラグをクリア
+	// 清除相机功能标志
 	clearCameraParams();
 	if (mUsbFs) {
 		close(mFd);

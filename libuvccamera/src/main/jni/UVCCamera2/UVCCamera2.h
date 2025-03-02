@@ -115,7 +115,7 @@ class UVCCamera2 {
 	uvc_device_handle_t *mDeviceHandle;
 	UVCStatusCallback *mStatusCallback;
 	UVCButtonCallback *mButtonCallback;
-	// プレビュー用 (预览)
+	// 预览
 	UVCPreview *mPreview;
 	uint64_t mCtrlSupports;
 	uint64_t mPUSupports;
@@ -181,7 +181,7 @@ public:
 	UVCCamera2();
 	~UVCCamera2();
 
-	int connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs);
+	int connect(int vid, int pid, int fd, int busNum, int devAddress, const char *usbFs);
 	int release();
 
 	int setStatusCallback(JNIEnv *env, jobject status_callback_obj);
