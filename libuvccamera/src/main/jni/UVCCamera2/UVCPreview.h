@@ -22,8 +22,8 @@
  * Files in the jni/libjpeg, jni/libusb, jin/libuvc, jni/rapidjson folder may have a different license, see the respective files.
 */
 
-#ifndef UVCPREVIEW_H_
-#define UVCPREVIEW_H_
+#ifndef _UVC_PREVIEW_H_
+#define _UVC_PREVIEW_H_
 
 #include "libUVCCamera2.h"
 #include <pthread.h>
@@ -76,7 +76,7 @@ private:
 	pthread_t capture_thread;
 	pthread_mutex_t capture_mutex;
 	pthread_cond_t capture_sync;
-	uvc_frame_t *captureQueu;			// keep latest frame
+	uvc_frame_t *captureFrame;			// keep latest frame
 	jobject mFrameCallbackObj;
 	convFunc_t mFrameCallbackFunc;
 	Fields_iframecallback iframecallback_fields;
@@ -109,8 +109,12 @@ private:
 	void do_capture_idle_loop(JNIEnv *env);
 	void do_capture_callback(JNIEnv *env, uvc_frame_t *frame);
 	void callbackPixelFormatChanged();
+
+    static uvc_frame_t* UVCFrameAllocator(size_t dataSize);
+    static void UVCFrameDeallocator(uvc_frame_t* frame);
+
 public:
-	UVCPreview(uvc_device_handle_t *devh);
+	explicit UVCPreview(uvc_device_handle_t *hDev);
 	~UVCPreview();
 
 	inline const bool isRunning() const;
@@ -123,4 +127,4 @@ public:
 	int setCaptureDisplay(ANativeWindow *capture_window);
 };
 
-#endif /* UVCPREVIEW_H_ */
+#endif /* _UVC_PREVIEW_H_ */

@@ -64,7 +64,7 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	previewFormat(WINDOW_FORMAT_RGBA_8888),
 	mIsRunning(false),
 	mIsCapturing(false),
-	captureQueu(NULL),
+	captureFrame(NULL),
 	mFrameCallbackObj(NULL),
 	mFrameCallbackFunc(NULL),
 	callbackPixelBytes(2) {
@@ -702,10 +702,10 @@ void UVCPreview::addCaptureFrame(uvc_frame_t *frame) {
 	pthread_mutex_lock(&capture_mutex);
 	if (LIKELY(isRunning())) {
 		// keep only latest one
-		if (captureQueu) {
-			recycle_frame(captureQueu);
+		if (captureFrame) {
+			recycle_frame(captureFrame);
 		}
-		captureQueu = frame;
+		captureFrame = frame;
 		pthread_cond_broadcast(&capture_sync);
 	}
 	pthread_mutex_unlock(&capture_mutex);
@@ -718,12 +718,12 @@ uvc_frame_t *UVCPreview::waitCaptureFrame() {
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&capture_mutex);
 	{
-		if (!captureQueu) {
+		if (!captureFrame) {
 			pthread_cond_wait(&capture_sync, &capture_mutex);
 		}
-		if (LIKELY(isRunning() && captureQueu)) {
-			frame = captureQueu;
-			captureQueu = NULL;
+		if (LIKELY(isRunning() && captureFrame)) {
+			frame = captureFrame;
+			captureFrame = NULL;
 		}
 	}
 	pthread_mutex_unlock(&capture_mutex);
@@ -736,9 +736,9 @@ uvc_frame_t *UVCPreview::waitCaptureFrame() {
 void UVCPreview::clearCaptureFrame() {
 	pthread_mutex_lock(&capture_mutex);
 	{
-		if (captureQueu)
-			recycle_frame(captureQueu);
-		captureQueu = NULL;
+		if (captureFrame)
+			recycle_frame(captureFrame);
+		captureFrame = NULL;
 	}
 	pthread_mutex_unlock(&capture_mutex);
 }
