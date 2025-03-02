@@ -35,7 +35,7 @@ private:
 	int m_max_size;
 	int m_size;
 public:
-	ObjectArray(int initial_capacity = 2)
+	explicit ObjectArray(int initial_capacity = 2)
 		: m_elements(new T[initial_capacity]),
 		  m_max_size(initial_capacity),
 		  m_size(0),
@@ -43,7 +43,8 @@ public:
 	}
 
 	~ObjectArray() { SAFE_DELETE_ARRAY(m_elements); }
-	void size(int new_size) {
+
+	void resize(int new_size) {
 		if (new_size != capacity()) {
 			T *new_elements = new T[new_size];
 			LOG_ASSERT(new_elements, "out of memory:size=%d,capacity=%d", new_size, m_max_size);
@@ -63,10 +64,11 @@ public:
 	inline int capacity() const { return m_max_size; }
 	inline T &operator[](int index) { return m_elements[index]; }
 	inline const T &operator[](int index) const { return m_elements[index]; }
+
 	int put(T object) {
 		if LIKELY(object) {
 			if UNLIKELY(size() >= capacity()) {
-				size(capacity() ? capacity() * 2 : 2);
+				resize(capacity() ? capacity() * 2 : 2);
 			}
 			m_elements[m_size++] = object;
 		}
@@ -123,7 +125,7 @@ public:
 	 * clear the T array but never delete actual T instance
 	 */
 	inline void clear() {
-		size(min_size);
+		resize(min_size);
 		m_size = 0;
 	}
 };
