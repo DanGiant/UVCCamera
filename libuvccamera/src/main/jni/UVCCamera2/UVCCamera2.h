@@ -33,7 +33,7 @@
 #include <android/native_window.h>
 #include "UVCStatusCallback.h"
 #include "UVCButtonCallback.h"
-#include "UVCPreview.h"
+#include "UVCPreview2.h"
 
 #define	CTRL_SCANNING		0x000001	// D0:  Scanning Mode
 #define	CTRL_AE				0x000002	// D1:  Auto-Exposure Mode
@@ -116,7 +116,7 @@ class UVCCamera2 {
 	UVCStatusCallback *mStatusCallback;
 	UVCButtonCallback *mButtonCallback;
 	// 预览
-	UVCPreview *mPreview;
+	UVCPreview2 *mPreview;
 	uint64_t mCtrlSupports;
 	uint64_t mPUSupports;
 	control_value_t mScanningMode;

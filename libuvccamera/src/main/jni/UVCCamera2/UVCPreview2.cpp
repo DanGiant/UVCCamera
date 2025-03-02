@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2014-2017 saki t_saki@serenegiant.com
  *
- * File name: UVCPreview.cpp
+ * File name: UVCPreview2.cpp
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
 #endif
 
 #include "utilbase.h"
-#include "UVCPreview.h"
+#include "UVCPreview2.h"
 #include "libuvc_internal.h"
 
 #define	LOCAL_DEBUG 0
@@ -46,7 +46,7 @@
 #define PREVIEW_PIXEL_BYTES 4	// RGBA/RGBX
 #define FRAME_POOL_SZ MAX_FRAME + 2
 
-UVCPreview::UVCPreview(uvc_device_handle_t *devh)
+UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 :	mPreviewWindow(NULL),
 	mCaptureWindow(NULL),
 	mDeviceHandle(devh),
@@ -80,7 +80,7 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	EXIT();
 }
 
-UVCPreview::~UVCPreview() {
+UVCPreview2::~UVCPreview2() {
 
 	ENTER();
 	if (mPreviewWindow)
@@ -106,7 +106,7 @@ UVCPreview::~UVCPreview() {
  * this function does not confirm the frame size
  * and you may need to confirm the size
  */
-uvc_frame_t *UVCPreview::get_frame(size_t data_bytes) {
+uvc_frame_t *UVCPreview2::get_frame(size_t data_bytes) {
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&pool_mutex);
 	{
@@ -122,7 +122,7 @@ uvc_frame_t *UVCPreview::get_frame(size_t data_bytes) {
 	return frame;
 }
 
-void UVCPreview::recycle_frame(uvc_frame_t *frame) {
+void UVCPreview2::recycle_frame(uvc_frame_t *frame) {
 	pthread_mutex_lock(&pool_mutex);
 	if (LIKELY(mFramePool.size() < FRAME_POOL_SZ)) {
 		mFramePool.put(frame);
@@ -135,7 +135,7 @@ void UVCPreview::recycle_frame(uvc_frame_t *frame) {
 }
 
 
-void UVCPreview::init_pool(size_t data_bytes) {
+void UVCPreview2::init_pool(size_t data_bytes) {
 	ENTER();
 
 	clear_pool();
@@ -150,7 +150,7 @@ void UVCPreview::init_pool(size_t data_bytes) {
 	EXIT();
 }
 
-void UVCPreview::clear_pool() {
+void UVCPreview2::clear_pool() {
 	ENTER();
 
 	pthread_mutex_lock(&pool_mutex);
@@ -165,9 +165,9 @@ void UVCPreview::clear_pool() {
 	EXIT();
 }
 
-inline const bool UVCPreview::isRunning() const {return mIsRunning; }
+inline const bool UVCPreview2::isRunning() const {return mIsRunning; }
 
-int UVCPreview::setPreviewSize(int width, int height, int min_fps, int max_fps, int mode, float bandwidth) {
+int UVCPreview2::setPreviewSize(int width, int height, int min_fps, int max_fps, int mode, float bandwidth) {
 	ENTER();
 	
 	int result = 0;
@@ -188,7 +188,7 @@ int UVCPreview::setPreviewSize(int width, int height, int min_fps, int max_fps, 
 	RETURN(result, int);
 }
 
-int UVCPreview::setPreviewDisplay(ANativeWindow *preview_window) {
+int UVCPreview2::setPreviewDisplay(ANativeWindow *preview_window) {
 	ENTER();
 	pthread_mutex_lock(&preview_mutex);
 	{
@@ -206,7 +206,7 @@ int UVCPreview::setPreviewDisplay(ANativeWindow *preview_window) {
 	RETURN(0, int);
 }
 
-int UVCPreview::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format) {
+int UVCPreview2::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format) {
 	
 	ENTER();
 	pthread_mutex_lock(&capture_mutex);
@@ -250,7 +250,7 @@ int UVCPreview::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pi
 	RETURN(0, int);
 }
 
-void UVCPreview::callbackPixelFormatChanged() {
+void UVCPreview2::callbackPixelFormatChanged() {
 	mFrameCallbackFunc = NULL;
 	const size_t sz = requestWidth * requestHeight;
 	switch (mPixelFormat) {
@@ -285,7 +285,7 @@ void UVCPreview::callbackPixelFormatChanged() {
 	}
 }
 
-void UVCPreview::clearDisplay() {
+void UVCPreview2::clearDisplay() {
 	ENTER();
 
 	ANativeWindow_Buffer buffer;
@@ -325,7 +325,7 @@ void UVCPreview::clearDisplay() {
 	EXIT();
 }
 
-int UVCPreview::startPreview() {
+int UVCPreview2::startPreview() {
 	ENTER();
 
 	int result = EXIT_FAILURE;
@@ -351,7 +351,7 @@ int UVCPreview::startPreview() {
 	RETURN(result, int);
 }
 
-int UVCPreview::stopPreview() {
+int UVCPreview2::stopPreview() {
 	ENTER();
 	bool b = isRunning();
 	if (LIKELY(b)) {
@@ -359,10 +359,10 @@ int UVCPreview::stopPreview() {
 		pthread_cond_signal(&preview_sync);
 		pthread_cond_signal(&capture_sync);
 		if (pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-			LOGW("UVCPreview::terminate capture thread: pthread_join failed");
+			LOGW("UVCPreview2::terminate capture thread: pthread_join failed");
 		}
 		if (pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
-			LOGW("UVCPreview::terminate preview thread: pthread_join failed");
+			LOGW("UVCPreview2::terminate preview thread: pthread_join failed");
 		}
 		clearDisplay();
 	}
@@ -386,8 +386,8 @@ int UVCPreview::stopPreview() {
 //**********************************************************************
 //
 //**********************************************************************
-void UVCPreview::uvc_preview_frame_callback(uvc_frame_t *frame, void *vptr_args) {
-	UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
+void UVCPreview2::uvc_preview_frame_callback(uvc_frame_t *frame, void *vptr_args) {
+	UVCPreview2 *preview = reinterpret_cast<UVCPreview2 *>(vptr_args);
 	if UNLIKELY(!preview->isRunning() || !frame || !frame->frame_format || !frame->data || !frame->data_bytes) return;
 	if (UNLIKELY(
 		((frame->frame_format != UVC_FRAME_FORMAT_MJPEG) && (frame->actual_bytes < preview->frameBytes))
@@ -417,7 +417,7 @@ void UVCPreview::uvc_preview_frame_callback(uvc_frame_t *frame, void *vptr_args)
 	}
 }
 
-void UVCPreview::addPreviewFrame(uvc_frame_t *frame) {
+void UVCPreview2::addPreviewFrame(uvc_frame_t *frame) {
 
 	pthread_mutex_lock(&preview_mutex);
 	if (isRunning() && (previewFrames.size() < MAX_FRAME)) {
@@ -431,7 +431,7 @@ void UVCPreview::addPreviewFrame(uvc_frame_t *frame) {
 	}
 }
 
-uvc_frame_t *UVCPreview::waitPreviewFrame() {
+uvc_frame_t *UVCPreview2::waitPreviewFrame() {
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&preview_mutex);
 	{
@@ -446,7 +446,7 @@ uvc_frame_t *UVCPreview::waitPreviewFrame() {
 	return frame;
 }
 
-void UVCPreview::clearPreviewFrame() {
+void UVCPreview2::clearPreviewFrame() {
 	pthread_mutex_lock(&preview_mutex);
 	{
 		for (int i = 0; i < previewFrames.size(); i++)
@@ -456,11 +456,11 @@ void UVCPreview::clearPreviewFrame() {
 	pthread_mutex_unlock(&preview_mutex);
 }
 
-void *UVCPreview::preview_thread_func(void *vptr_args) {
+void *UVCPreview2::preview_thread_func(void *vptr_args) {
 	int result;
 
 	ENTER();
-	UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
+	UVCPreview2 *preview = reinterpret_cast<UVCPreview2 *>(vptr_args);
 	if (LIKELY(preview)) {
 		uvc_stream_ctrl_t ctrl;
 		result = preview->prepare_preview(&ctrl);
@@ -472,7 +472,7 @@ void *UVCPreview::preview_thread_func(void *vptr_args) {
 	pthread_exit(NULL);
 }
 
-int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
+int UVCPreview2::prepare_preview(uvc_stream_ctrl_t *ctrl) {
 	uvc_error_t result;
 
 	ENTER();
@@ -509,7 +509,7 @@ int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
 	RETURN(result, int);
 }
 
-void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
+void UVCPreview2::do_preview(uvc_stream_ctrl_t *ctrl) {
 	ENTER();
 
 	uvc_frame_t *frame = NULL;
@@ -624,7 +624,7 @@ int copyToSurface(uvc_frame_t *frame, ANativeWindow **window) {
 }
 
 // changed to return original frame instead of returning converted frame even if convert_func is not null.
-uvc_frame_t *UVCPreview::draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, convFunc_t convert_func, int pixcelBytes) {
+uvc_frame_t *UVCPreview2::draw_preview_one(uvc_frame_t *frame, ANativeWindow **window, convFunc_t convert_func, int pixcelBytes) {
 	// ENTER();
 
 	int b = 0;
@@ -660,9 +660,9 @@ uvc_frame_t *UVCPreview::draw_preview_one(uvc_frame_t *frame, ANativeWindow **wi
 //======================================================================
 //
 //======================================================================
-inline const bool UVCPreview::isCapturing() const { return mIsCapturing; }
+inline const bool UVCPreview2::isCapturing() const { return mIsCapturing; }
 
-int UVCPreview::setCaptureDisplay(ANativeWindow *capture_window) {
+int UVCPreview2::setCaptureDisplay(ANativeWindow *capture_window) {
 	ENTER();
 	pthread_mutex_lock(&capture_mutex);
 	{
@@ -698,7 +698,7 @@ int UVCPreview::setCaptureDisplay(ANativeWindow *capture_window) {
 	RETURN(0, int);
 }
 
-void UVCPreview::addCaptureFrame(uvc_frame_t *frame) {
+void UVCPreview2::addCaptureFrame(uvc_frame_t *frame) {
 	pthread_mutex_lock(&capture_mutex);
 	if (LIKELY(isRunning())) {
 		// keep only latest one
@@ -714,7 +714,7 @@ void UVCPreview::addCaptureFrame(uvc_frame_t *frame) {
 /**
  * get frame data for capturing, if not exist, block and wait
  */
-uvc_frame_t *UVCPreview::waitCaptureFrame() {
+uvc_frame_t *UVCPreview2::waitCaptureFrame() {
 	uvc_frame_t *frame = NULL;
 	pthread_mutex_lock(&capture_mutex);
 	{
@@ -733,7 +733,7 @@ uvc_frame_t *UVCPreview::waitCaptureFrame() {
 /**
  * clear drame data for capturing
  */
-void UVCPreview::clearCaptureFrame() {
+void UVCPreview2::clearCaptureFrame() {
 	pthread_mutex_lock(&capture_mutex);
 	{
 		if (captureFrame)
@@ -746,14 +746,14 @@ void UVCPreview::clearCaptureFrame() {
 //======================================================================
 /*
  * thread function
- * @param vptr_args pointer to UVCPreview instance
+ * @param vptr_args pointer to UVCPreview2 instance
  */
 // static
-void *UVCPreview::capture_thread_func(void *vptr_args) {
+void *UVCPreview2::capture_thread_func(void *vptr_args) {
 	int result;
 
 	ENTER();
-	UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
+	UVCPreview2 *preview = reinterpret_cast<UVCPreview2 *>(vptr_args);
 	if (LIKELY(preview)) {
 		JavaVM *vm = getVM();
 		JNIEnv *env;
@@ -771,7 +771,7 @@ void *UVCPreview::capture_thread_func(void *vptr_args) {
 /**
  * the actual function for capturing
  */
-void UVCPreview::do_capture(JNIEnv *env) {
+void UVCPreview2::do_capture(JNIEnv *env) {
 
 	ENTER();
 
@@ -789,7 +789,7 @@ void UVCPreview::do_capture(JNIEnv *env) {
 	EXIT();
 }
 
-void UVCPreview::do_capture_idle_loop(JNIEnv *env) {
+void UVCPreview2::do_capture_idle_loop(JNIEnv *env) {
 	ENTER();
 	
 	for (; isRunning() && isCapturing() ;) {
@@ -802,7 +802,7 @@ void UVCPreview::do_capture_idle_loop(JNIEnv *env) {
 /**
  * write frame data to Surface for capturing
  */
-void UVCPreview::do_capture_surface(JNIEnv *env) {
+void UVCPreview2::do_capture_surface(JNIEnv *env) {
 	ENTER();
 
 	uvc_frame_t *frame = NULL;
@@ -843,7 +843,7 @@ void UVCPreview::do_capture_surface(JNIEnv *env) {
 /**
 * call IFrameCallback#onFrame if needs
  */
-void UVCPreview::do_capture_callback(JNIEnv *env, uvc_frame_t *frame) {
+void UVCPreview2::do_capture_callback(JNIEnv *env, uvc_frame_t *frame) {
 	ENTER();
 
 	if (LIKELY(frame)) {

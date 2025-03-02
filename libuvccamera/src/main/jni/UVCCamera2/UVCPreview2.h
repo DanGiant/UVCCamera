@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2014-2017 saki t_saki@serenegiant.com
  *
- * File name: UVCPreview.h
+ * File name: UVCPreview2.h
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@
  * Files in the jni/libjpeg, jni/libusb, jin/libuvc, jni/rapidjson folder may have a different license, see the respective files.
 */
 
-#ifndef _UVC_PREVIEW_H_
-#define _UVC_PREVIEW_H_
+#ifndef _UVC_PREVIEW2_H_
+#define _UVC_PREVIEW2_H_
 
 #include "libUVCCamera2.h"
 #include <pthread.h>
@@ -53,7 +53,7 @@ typedef struct {
 	jmethodID onFrame;
 } Fields_iframecallback;
 
-class UVCPreview {
+class UVCPreview2 {
 private:
 	uvc_device_handle_t *mDeviceHandle;
 	ANativeWindow *mPreviewWindow;
@@ -114,8 +114,8 @@ private:
     static void UVCFrameDeallocator(uvc_frame_t* frame);
 
 public:
-	explicit UVCPreview(uvc_device_handle_t *hDev);
-	~UVCPreview();
+	explicit UVCPreview2(uvc_device_handle_t *hDev);
+	~UVCPreview2();
 
 	inline const bool isRunning() const;
 	int setPreviewSize(int width, int height, int min_fps, int max_fps, int mode, float bandwidth = 1.0f);
@@ -127,4 +127,4 @@ public:
 	int setCaptureDisplay(ANativeWindow *capture_window);
 };
 
-#endif /* _UVC_PREVIEW_H_ */
+#endif /* _UVC_PREVIEW2_H_ */

@@ -166,7 +166,7 @@ int UVCCamera2::connect(int vid, int pid, int fd, int busNum, int devAddress, co
 				mFd = fd;
 				mStatusCallback = new UVCStatusCallback(mDeviceHandle);
 				mButtonCallback = new UVCButtonCallback(mDeviceHandle);
-				mPreview = new UVCPreview(mDeviceHandle);
+				mPreview = new UVCPreview2(mDeviceHandle);
 			} else {
 				// 当你无法打开
 				LOGE("could not open camera:err=%d", result);
