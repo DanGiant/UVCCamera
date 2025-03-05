@@ -29,6 +29,8 @@
 #include <pthread.h>
 #include <android/native_window.h>
 #include "objectarray.h"
+#include "ObjectArraySizeFixed.h"
+#include "ObjectPtrLoopBuffer.h"
 
 #pragma interface
 
@@ -52,6 +54,10 @@ typedef uvc_error_t (*convFunc_t)(uvc_frame_t *in, uvc_frame_t *out);
 typedef struct {
 	jmethodID onFrame;
 } Fields_iframecallback;
+
+uvc_frame_t* UVCFrameAllocate(size_t dataSize);
+void UVCFrameDeallocate(uvc_frame_t *frame);
+uvc_frame_t* UVCFrameDuplicate(uvc_frame_t *frame);
 
 class UVCPreview2 {
 private:
@@ -89,6 +95,18 @@ private:
 	void recycle_frame(uvc_frame_t *frame);
 	void init_pool(size_t data_bytes);
 	void clear_pool();
+
+    uvc_frame_t *getFrameFromCameraFramePool(size_t data_bytes);
+    void recycleCameraFrame(uvc_frame_t *frame);
+    void clearCameraFramePool();
+    pthread_mutex_t mCameraFramePoolMutex;
+    ObjectArraySizeFixed<uvc_frame_t*, UVCFrameAllocate, UVCFrameDeallocate> mCameraFramePool;
+
+    // frame storage that save 300 frames
+    void addFrameToStorage(uvc_frame_t *frame);
+    pthread_mutex_t mFrameStorageMutex;
+    ObjectPtrLoopBuffer<uvc_frame_t *, UVCFrameDuplicate, UVCFrameDeallocate> mFrameStorage;
+
 //
 	void clearDisplay();
 	static void uvc_preview_frame_callback(uvc_frame_t *frame, void *vptr_args);
@@ -109,9 +127,6 @@ private:
 	void do_capture_idle_loop(JNIEnv *env);
 	void do_capture_callback(JNIEnv *env, uvc_frame_t *frame);
 	void callbackPixelFormatChanged();
-
-    static uvc_frame_t* UVCFrameAllocator(size_t dataSize);
-    static void UVCFrameDeallocator(uvc_frame_t* frame);
 
 public:
 	explicit UVCPreview2(uvc_device_handle_t *hDev);

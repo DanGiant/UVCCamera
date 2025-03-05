@@ -55,7 +55,8 @@
 /** @internal */
 uvc_error_t uvc_ensure_frame_size(uvc_frame_t *frame, size_t need_bytes) {
 	if LIKELY(frame->library_owns_data) {
-		if UNLIKELY(!frame->data || frame->data_bytes != need_bytes) {
+//		if UNLIKELY(!frame->data || frame->data_bytes != need_bytes) {
+        if UNLIKELY(!frame->data || frame->data_bytes < need_bytes) {
 			frame->actual_bytes = frame->data_bytes = need_bytes;	// XXX
 			frame->data = realloc(frame->data, frame->data_bytes);
 		}

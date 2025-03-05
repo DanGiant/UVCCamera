@@ -39,7 +39,7 @@ import com.serenegiant.usb.IStatusCallback;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.USBMonitor.OnDeviceConnectListener;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
-import com.serenegiant.usb.UVCCamera;
+import com.serenegiant.usb.UVCCamera2;
 import com.serenegiant.widget.SimpleUVCCameraTextureView;
 
 import java.nio.ByteBuffer;
@@ -49,7 +49,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private final Object mSync = new Object();
     // for accessing USB and USB camera
     private USBMonitor mUSBMonitor;
-	private UVCCamera mUVCCamera;
+	private UVCCamera2 mUVCCamera;
 	private SimpleUVCCameraTextureView mUVCCameraView;
 	// for open&start / stop&close camera preview
 	private ImageButton mCameraButton;
@@ -63,7 +63,8 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		mCameraButton.setOnClickListener(mOnClickListener);
 
 		mUVCCameraView = (SimpleUVCCameraTextureView)findViewById(R.id.UVCCameraTextureView1);
-		mUVCCameraView.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
+		mUVCCameraView.setAspectRatio(UVCCamera2.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera2.DEFAULT_PREVIEW_HEIGHT);
+		// mUVCCameraView.setAspectRatio(1280 / 720.0f);
 
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 
@@ -138,7 +139,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 			queueEvent(new Runnable() {
 				@Override
 				public void run() {
-					final UVCCamera camera = new UVCCamera();
+					final UVCCamera2 camera = new UVCCamera2();
 					camera.open(ctrlBlock);
 					camera.setStatusCallback(new IStatusCallback() {
 						@Override
@@ -189,11 +190,12 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 						mPreviewSurface = null;
 					}
 					try {
-						camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.FRAME_FORMAT_MJPEG);
+						// camera.setPreviewSize(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT, UVCCamera2.FRAME_FORMAT_MJPEG);
+						camera.setPreviewSize(1280, 720, 1, 61, UVCCamera2.FRAME_FORMAT_MJPEG, UVCCamera2.DEFAULT_BANDWIDTH);
 					} catch (final IllegalArgumentException e) {
 						// fallback to YUV mode
 						try {
-							camera.setPreviewSize(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, UVCCamera.DEFAULT_PREVIEW_MODE);
+							camera.setPreviewSize(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT, UVCCamera2.DEFAULT_PREVIEW_MODE);
 						} catch (final IllegalArgumentException e1) {
 							camera.destroy();
 							return;
@@ -203,7 +205,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 					if (st != null) {
 						mPreviewSurface = new Surface(st);
 						camera.setPreviewDisplay(mPreviewSurface);
-//						camera.setFrameCallback(mIFrameCallback, UVCCamera.PIXEL_FORMAT_RGB565/*UVCCamera.PIXEL_FORMAT_NV21*/);
+//						camera.setFrameCallback(mIFrameCallback, UVCCamera2.PIXEL_FORMAT_RGB565/*UVCCamera2.PIXEL_FORMAT_NV21*/);
 						camera.startPreview();
 					}
 					synchronized (mSync) {
@@ -270,9 +272,9 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		}
 	}
 
-	// if you need frame data as byte array on Java side, you can use this callback method with UVCCamera#setFrameCallback
+	// if you need frame data as byte array on Java side, you can use this callback method with UVCCamera2#setFrameCallback
 	// if you need to create Bitmap in IFrameCallback, please refer following snippet.
-/*	final Bitmap bitmap = Bitmap.createBitmap(UVCCamera.DEFAULT_PREVIEW_WIDTH, UVCCamera.DEFAULT_PREVIEW_HEIGHT, Bitmap.Config.RGB_565);
+/*	final Bitmap bitmap = Bitmap.createBitmap(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT, Bitmap.Config.RGB_565);
 	private final IFrameCallback mIFrameCallback = new IFrameCallback() {
 		@Override
 		public void onFrame(final ByteBuffer frame) {

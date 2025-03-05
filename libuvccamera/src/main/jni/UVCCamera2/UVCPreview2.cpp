@@ -46,6 +46,11 @@
 #define PREVIEW_PIXEL_BYTES 4	// RGBA/RGBX
 #define FRAME_POOL_SZ MAX_FRAME + 2
 
+#define MAX_FRAME_WIDTH     1920
+#define MAX_FRAME_HEIGHT    1080
+#define MAX_FRAME_DATA_SIZE (MAX_FRAME_WIDTH * MAX_FRAME_HEIGHT * 3 / 30)
+#define MAX_FRAME_STORAGE   100
+
 UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 :	mPreviewWindow(NULL),
 	mCaptureWindow(NULL),
@@ -67,7 +72,10 @@ UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 	captureFrame(NULL),
 	mFrameCallbackObj(NULL),
 	mFrameCallbackFunc(NULL),
-	callbackPixelBytes(2) {
+	callbackPixelBytes(2),
+    mCameraFramePool(2 * MAX_FRAME_STORAGE, MAX_FRAME_DATA_SIZE),
+    mFrameStorage(MAX_FRAME_STORAGE)
+{
 
 	ENTER();
 	pthread_cond_init(&preview_sync, NULL);
@@ -77,6 +85,10 @@ UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 	pthread_mutex_init(&capture_mutex, NULL);
 //	
 	pthread_mutex_init(&pool_mutex, NULL);
+
+    pthread_mutex_init(&mCameraFramePoolMutex, NULL);
+    pthread_mutex_init(&mFrameStorageMutex, NULL);
+
 	EXIT();
 }
 
@@ -97,6 +109,8 @@ UVCPreview2::~UVCPreview2() {
 	pthread_mutex_destroy(&capture_mutex);
 	pthread_cond_destroy(&capture_sync);
 	pthread_mutex_destroy(&pool_mutex);
+    pthread_mutex_destroy(&mCameraFramePoolMutex);
+    pthread_mutex_destroy(&mFrameStorageMutex);
 	EXIT();
 }
 
@@ -116,7 +130,7 @@ uvc_frame_t *UVCPreview2::get_frame(size_t data_bytes) {
 	}
 	pthread_mutex_unlock(&pool_mutex);
 	if UNLIKELY(!frame) {
-		LOGW("allocate new frame");
+		LOGW("get_frame: allocate new frame");
 		frame = uvc_allocate_frame(data_bytes);
 	}
 	return frame;
@@ -163,6 +177,88 @@ void UVCPreview2::clear_pool() {
 	}
 	pthread_mutex_unlock(&pool_mutex);
 	EXIT();
+}
+
+uvc_frame_t *UVCPreview2::getFrameFromCameraFramePool(size_t data_bytes) {
+    uvc_frame_t *frame = nullptr;
+
+    pthread_mutex_lock(&mCameraFramePoolMutex);
+    {
+        if (!mCameraFramePool.empty()) {
+            frame = mCameraFramePool.pop_front();
+            if (frame != nullptr) {
+//                LOGW("getFrameFromCameraFramePool: need %zu, frame's size=%zu", data_bytes, frame->data_bytes);
+                if (frame->data_bytes < data_bytes) {
+                    LOGW("WILL FREE: frame's data size too small, will be free!");
+                    uvc_free_frame(frame);
+                    frame = nullptr;
+                }
+            }
+        }
+    }
+    pthread_mutex_unlock(&mCameraFramePoolMutex);
+
+    if (frame == nullptr) {
+        LOGW("getFrameFromCameraFramePool: allocate new frame");
+        if (data_bytes < MAX_FRAME_DATA_SIZE)
+            data_bytes = MAX_FRAME_DATA_SIZE;
+        frame = uvc_allocate_frame(data_bytes);
+    }
+
+    return frame;
+}
+
+void UVCPreview2::addFrameToStorage(uvc_frame_t *frame) {
+    uvc_frame_t *extrudedFrame = nullptr;
+
+    if (LIKELY(frame != nullptr)) {
+        pthread_mutex_lock(&mFrameStorageMutex);
+        {
+            extrudedFrame = mFrameStorage.push_back(frame);
+            frame = nullptr;
+        }
+        pthread_mutex_unlock(&mFrameStorageMutex);
+
+        if (UNLIKELY(frame != nullptr)) {
+            LOGW("addFrameToStorage: recycle camera when save storage failed!");
+            recycleCameraFrame(frame);
+            frame = nullptr;
+        }
+
+        if (LIKELY(extrudedFrame != nullptr)) {
+//            LOGW("addFrameToStorage: recycle camera frame extruded from storage!");
+            recycleCameraFrame(extrudedFrame);
+        }
+    }
+}
+
+void UVCPreview2::recycleCameraFrame(uvc_frame_t *frame) {
+    if (LIKELY(frame != nullptr)) {
+        pthread_mutex_lock(&mCameraFramePoolMutex);
+        {
+//            LOGW("recycleCameraFrame: recycle frame with size=%zu", frame->data_bytes);
+            frame->actual_bytes = 0;
+            mCameraFramePool.push_back(frame);
+            frame = nullptr;
+        }
+        pthread_mutex_unlock(&mCameraFramePoolMutex);
+
+        if (UNLIKELY(frame != nullptr)) {
+            uvc_free_frame(frame);
+            frame = nullptr;
+        }
+    }
+}
+
+void UVCPreview2::clearCameraFramePool() {
+    ENTER();
+
+    pthread_mutex_lock(&mCameraFramePoolMutex);
+    {
+        mCameraFramePool.clear();
+    }
+    pthread_mutex_unlock(&mCameraFramePoolMutex);
+    EXIT();
 }
 
 inline const bool UVCPreview2::isRunning() const {return mIsRunning; }
@@ -414,6 +510,20 @@ void UVCPreview2::uvc_preview_frame_callback(uvc_frame_t *frame, void *vptr_args
 			return;
 		}
 		preview->addPreviewFrame(copy);
+
+        uvc_frame_t *copy2 = preview->getFrameFromCameraFramePool(frame->actual_bytes);
+        if (UNLIKELY(!copy)) {
+            return;
+        }
+
+        ret = uvc_duplicate_frame(frame, copy2);
+
+        if (UNLIKELY(ret)) {
+            LOGW("UVCPreview2::uvc_preview_frame_callback recycle camera frame when duplicate frame failed!");
+            preview->recycleCameraFrame(copy2);
+            return;
+        }
+        preview->addFrameToStorage(copy2);
 	}
 }
 
@@ -873,4 +983,26 @@ void UVCPreview2::do_capture_callback(JNIEnv *env, uvc_frame_t *frame) {
 		recycle_frame(callback_frame);
 	}
 	EXIT();
+}
+
+uvc_frame_t* UVCFrameAllocate(size_t dataSize) {
+    LOGW("UVCFrameAllocate, data size=%zu", dataSize);
+    uvc_frame_t *frame = uvc_allocate_frame(dataSize);
+    return frame;
+}
+
+void UVCFrameDeallocate(uvc_frame_t *frame) {
+    LOGW("UVCFrameDeallocate");
+    if (frame != nullptr) {
+        uvc_free_frame(frame);
+    }
+}
+
+uvc_frame_t* UVCFrameDuplicate(uvc_frame_t *srcFrame) {
+    uvc_frame_t *dstFrame = nullptr;
+    if (srcFrame != nullptr && srcFrame->actual_bytes > 0) {
+        dstFrame = uvc_allocate_frame(srcFrame->actual_bytes);
+        uvc_duplicate_frame(srcFrame, dstFrame);
+    }
+    return dstFrame;
 }
