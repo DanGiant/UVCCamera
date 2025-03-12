@@ -47,6 +47,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.androidTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.main.iml" filepath="$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/usbCameraTest8/UVCCamera.usbCameraTest8.unitTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.iml" filepath="$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.main.iml" filepath="$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/videoinspector/UVCCamera.videoinspector.unitTest.iml" />
     </modules>
   </component>
 </project>

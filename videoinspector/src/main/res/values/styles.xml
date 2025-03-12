@@ -1,0 +1,48 @@
+<resources>
+    <style name="Widget.App.ActionButton" parent="@style/Widget.AppCompat.ActionButton">
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="Theme.App.Light.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+        <item name="actionButtonStyle">@style/Widget.App.ActionButton</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimTheme</item>
+    </style>
+
+    <style name="Theme.App.NoActionBar" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="actionButtonStyle">@style/Widget.App.ActionButton</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimTheme</item>
+    </style>
+
+    <style name="AnimActivityTheme">
+        <item name="android:windowAnimationStyle">@style/WindowAnimTheme</item>
+    </style>
+
+    <style name="WindowAnimTheme" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/in_from_left</item>
+        <item name="android:activityOpenExitAnimation">@anim/out_from_right</item>
+        <item name="android:activityCloseEnterAnimation">@anim/in_from_right</item>
+        <item name="android:activityCloseExitAnimation">@anim/out_from_left</item>
+    </style>
+
+    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textSize">20dp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!--自定义Dialog背景全透明无边框theme-->
+    <style name="ProgressDialog" parent="android:style/Theme.Dialog">
+        <!--背景颜色和透明程度-->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!--是否去除标题-->
+        <item name="android:windowNoTitle">true</item>
+        <!--是否去除边框-->
+        <item name="android:windowFrame">@null</item>
+        <!--是否浮现在activity之上-->
+        <item name="android:windowIsFloating">true</item>
+        <!--是否模糊-->
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>
