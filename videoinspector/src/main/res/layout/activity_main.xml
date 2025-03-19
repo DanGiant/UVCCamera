@@ -1,25 +1,244 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
+    android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.jumps.videoinspector.MainActivity"
-    tools:ignore="MergeRootFrame" >
+    tools:ignore="MergeRootFrame"
+    android:background="#4d000000" >
 
-    <com.serenegiant.widget.SimpleUVCCameraTextureView
-        android:id="@+id/UVCCameraTextureView1"
-        android:layout_width="match_parent"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_weight="4"
+        android:layout_width="0dp"
+        android:layout_height="match_parent" >
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="4"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_margin="3dp"
+            android:background="@color/BLACK" >
+            <com.serenegiant.widget.SimpleUVCCameraTextureView
+                android:id="@+id/camera_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:layout_gravity="center" />
+        </LinearLayout>
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:orientation="vertical"
+            android:layout_weight="6"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_margin="1dp" >
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:layout_marginBottom="1dp"
+                android:textSize="12sp"
+                android:text="@string/resolution" />
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="70dp" >
+
+                <ImageButton
+                    android:id="@+id/camera_button"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/camera"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/ic_menu_camera" />
+
+                <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent" >
+
+                    <Button
+                        android:id="@+id/setup_button"
+                        android:layout_weight="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:text="@string/setup"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/black"
+                        android:layout_gravity="center"
+                        tools:ignore="NestedWeights" />
+
+                    <Button
+                        android:id="@+id/resolution_button"
+                        android:layout_weight="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:text="@string/resolution"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/black"
+                        android:layout_gravity="center" />
+
+                </LinearLayout>
+
+                <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent" >
+
+                    <Button
+                        android:id="@+id/fps_button"
+                        android:layout_weight="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:text="@string/frame_rate"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/black"
+                        android:layout_gravity="center"
+                        tools:ignore="NestedWeights" />
+
+                    <Button
+                        android:id="@+id/auxiliary_button"
+                        android:layout_weight="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:text="@string/auxiliary"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/black"
+                        android:layout_gravity="center" />
+
+                </LinearLayout>
+
+                <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent" >
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="35dp" >
+
+                <Button
+                    android:id="@+id/record_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/record"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center"
+                    tools:ignore="NestedWeights" />
+
+                <Button
+                    android:id="@+id/backward_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/backward"
+                    android:textSize="12sp"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+
+                <TextView
+                    android:id="@+id/record_frame_num"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:layout_gravity="center"
+                    android:textSize="15sp"
+                    android:textColor="@color/BLACK"
+                    android:textAlignment="center"
+                    android:text="300" />
+
+                <Button
+                    android:id="@+id/forward_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/forward"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+
+            </LinearLayout>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="35dp" >
+                <Button
+                    android:id="@+id/rotate_clockwise_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/rotate_clockwise"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+                <Button
+                    android:id="@+id/rotate_counterclockwise_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/rotate_counterclockwise"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+                <Button
+                    android:id="@+id/flip_horz_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/flip_horz"
+                    android:textSize="11sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+                <Button
+                    android:id="@+id/flip_vert_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/flip_vert"
+                    android:textSize="11sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_weight="6"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:background="#ff000000" />
+        android:layout_gravity="center_vertical"
+        android:background="@color/BLACK" >
 
-    <ImageButton
-        android:id="@+id/camera_button"
-        android:layout_width="@dimen/button_size"
-        android:layout_height="@dimen/button_size"
-        android:contentDescription="@string/camera"
-        android:scaleType="centerCrop"
-        android:src="@android:drawable/ic_menu_camera" />
+        <com.serenegiant.widget.SimpleUVCCameraTextureView
+            android:id="@+id/inspect_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:layout_gravity="center" />
 
-</FrameLayout>
+    </LinearLayout>
+
+</LinearLayout>

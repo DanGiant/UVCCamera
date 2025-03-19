@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">VideoInspector</string>
+
+    <string name="start">start</string>
+    <string name="stop">stop</string>
+    <string name="setup">setup</string>
+    <string name="frame_rate">fps</string>
+    <string name="resolution">resolution</string>
+    <string name="auxiliary">auxiliary</string>
+
+    <string name="record">REC0</string>
+    <string name="backward">backward</string>
+    <string name="forward">forward</string>
+
+    <string name="rotate_clockwise">rotate clockwise</string>
+    <string name="rotate_counterclockwise">rotate counter-clockwise</string>
+    <string name="flip_horz">flip horizontally</string>
+    <string name="flip_vert">flip vertically</string>
+
 </resources>

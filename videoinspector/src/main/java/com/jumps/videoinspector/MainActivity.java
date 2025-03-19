@@ -50,7 +50,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		mCameraButton = (ImageButton)findViewById(R.id.camera_button);
 		mCameraButton.setOnClickListener(mOnClickListener);
 
-		mUVCCameraView = (SimpleUVCCameraTextureView)findViewById(R.id.UVCCameraTextureView1);
+		mUVCCameraView = (SimpleUVCCameraTextureView)findViewById(R.id.camera_preview);
 		mUVCCameraView.setAspectRatio(UVCCamera2.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera2.DEFAULT_PREVIEW_HEIGHT);
 		// mUVCCameraView.setAspectRatio(1280 / 720.0f);
 

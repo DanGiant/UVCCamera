@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">视频检查</string>
+
+    <string name="start">开始</string>
+    <string name="stop">停止</string>
+    <string name="setup">设置</string>
+    <string name="frame_rate">帧率</string>
+    <string name="resolution">分辨率</string>
+    <string name="auxiliary">辅助</string>
+
+    <string name="record">REC0</string>
+    <string name="backward">后退</string>
+    <string name="forward">前进</string>
+
+    <string name="rotate_clockwise">正向90</string>
+    <string name="rotate_counterclockwise">逆向90</string>
+    <string name="flip_horz">水平镜像</string>
+    <string name="flip_vert">垂直镜像</string>
+
+</resources>
