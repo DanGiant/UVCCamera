@@ -1,29 +1,37 @@
 package com.jumps.videoinspector;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.serenegiant.common.BaseActivity;
 import com.serenegiant.usb.CameraDialog;
 import com.serenegiant.usb.IButtonCallback;
+import com.serenegiant.usb.IInspectionFrameCallback;
 import com.serenegiant.usb.IStatusCallback;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.USBMonitor.OnDeviceConnectListener;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
 import com.serenegiant.usb.UVCCamera2;
 import com.serenegiant.widget.SimpleUVCCameraTextureView;
+import com.serenegiant.widget.YUYVRenderer;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public final class MainActivity extends BaseActivity implements CameraDialog.CameraDialogParent {
@@ -37,6 +45,11 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	// for open&start / stop&close camera preview
 	private ImageButton mCameraButton;
 	private Surface mPreviewSurface;
+
+	private Button mInspectionButton;
+
+	private GLSurfaceView mInspectionView;
+	private YUYVRenderer mYUYVRenderer;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -56,6 +69,23 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 
+		mInspectionButton = (Button) findViewById(R.id.record_button);
+		mInspectionButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				synchronized (mSync) {
+					if (mUVCCamera != null) {
+						mUVCCamera.startInspection();
+					}
+				}
+			}
+		});
+
+		mInspectionView = (GLSurfaceView) findViewById(R.id.inspection_view);
+		mInspectionView.setEGLContextClientVersion(3);
+
+		mYUYVRenderer = new YUYVRenderer(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT);
+		mInspectionView.setRenderer(mYUYVRenderer);
 	}
 
 	@Override
@@ -91,6 +121,13 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		}
 		super.onResume();
+		mInspectionView.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		mInspectionView.onPause();
 	}
 
 	@Override
@@ -109,6 +146,12 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		mUVCCameraView = null;
 		mCameraButton = null;
 		super.onDestroy();
+	}
+
+	public void updateYUYVData(byte[] data) {
+		if (mYUYVRenderer != null) {
+			mYUYVRenderer.updateYUYVData(data);
+		}
 	}
 
 	private final OnClickListener mOnClickListener = new OnClickListener() {
@@ -191,7 +234,8 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 					}
 					try {
 						// camera.setPreviewSize(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT, UVCCamera2.FRAME_FORMAT_MJPEG);
-						camera.setPreviewSize(640, 480, 1, 121, UVCCamera2.FRAME_FORMAT_MJPEG, UVCCamera2.DEFAULT_BANDWIDTH);
+						camera.setPreviewSize(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT,
+								1, 121, UVCCamera2.FRAME_FORMAT_MJPEG, UVCCamera2.DEFAULT_BANDWIDTH);
 					} catch (final IllegalArgumentException e) {
 						// fallback to YUV mode
 						try {
@@ -206,8 +250,10 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 						mPreviewSurface = new Surface(st);
 						camera.setPreviewDisplay(mPreviewSurface);
 //						camera.setFrameCallback(mIFrameCallback, UVCCamera2.PIXEL_FORMAT_RGB565/*UVCCamera2.PIXEL_FORMAT_NV21*/);
+						camera.setInspectionFrameCallback(mInspectionFrameCallback);
 						camera.startPreview();
 					}
+
 					synchronized (mSync) {
 						mUVCCamera = camera;
 					}
@@ -272,8 +318,77 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		}
 	}
 
+//	public void writeFile(Context context, byte[] data) {
+//		// 获取系统的公共存储路径
+//		String publicPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
+//		Log.d(TAG, "save to path: " + publicPath);
+//
+//		// 获取文件路径
+//		File file = new File(publicPath + "/image.yuv");
+//		try {
+//			if (!file.exists()) {
+//				file.createNewFile(); // 创建新文件
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//
+//        // 打开文件输出流
+//		try (FileOutputStream fos = new FileOutputStream(file, false)) {
+//			// 将字符串转换为字节并写入文件
+//			fos.write(data);
+//			fos.close();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
+
+	private final IInspectionFrameCallback mInspectionFrameCallback = new IInspectionFrameCallback() {
+		@Override
+		public void onInspectionStart(int totalFrames) {
+			Log.d(TAG, "onInspectionStart: total frames=" + totalFrames);
+		}
+
+		@Override
+		public void onInspectionStop() {
+			Log.d(TAG, "onInspectionStop");
+		}
+
+		@Override
+		public void onInspectionFrame(ByteBuffer frame, int frameFormat, int index) {
+
+			Log.d(TAG, "onInspectionFrame: pixelFormat=" + frameFormat + ", index=" + index);
+
+			if (frame.remaining() <= 0) {
+				Log.e(TAG, "onInspectionFrame: No data!!!");
+				return;
+			}
+
+			byte[] data = new byte[frame.remaining()];
+			frame.get(data, 0, data.length);
+
+//			writeFile(getApplicationContext(), data);
+
+			Log.d(TAG, "onInspectionFrame: frame bytes:" + data.length + ", pixelFormat=" + frameFormat + ", index=" + index);
+
+			if (frameFormat == UVCCamera2.FRAME_FORMAT_YUYV) {
+				if (data != null && data.length > 0) {
+					final byte[] frameData = data;
+					mInspectionView.post(new Runnable() {
+						@Override
+						public void run() {
+							Log.d(TAG, "call inspection view's newDataArrived");
+							updateYUYVData(frameData);
+						}
+					});
+				}
+			}
+		}
+	};
+
 	// if you need frame data as byte array on Java side, you can use this callback method with UVCCamera2#setFrameCallback
 	// if you need to create Bitmap in IFrameCallback, please refer following snippet.
+
 /*	final Bitmap bitmap = Bitmap.createBitmap(UVCCamera2.DEFAULT_PREVIEW_WIDTH, UVCCamera2.DEFAULT_PREVIEW_HEIGHT, Bitmap.Config.RGB_565);
 	private final IFrameCallback mIFrameCallback = new IFrameCallback() {
 		@Override

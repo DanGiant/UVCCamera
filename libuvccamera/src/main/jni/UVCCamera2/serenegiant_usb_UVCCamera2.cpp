@@ -276,6 +276,41 @@ static jint nativeSetFrameCallback(JNIEnv *env, jobject thiz,
 	RETURN(result, jint);
 }
 
+
+static jint nativeStartInspection(JNIEnv *env, jobject thiz, ID_TYPE id_camera) {
+
+    ENTER();
+    UVCCamera2 *camera = reinterpret_cast<UVCCamera2 *>(id_camera);
+    if (LIKELY(camera)) {
+        return camera->startInspection(env);
+    }
+    RETURN(JNI_ERR, jint);
+}
+
+static jint nativeStopInspection(JNIEnv *env, jobject thiz, ID_TYPE id_camera) {
+
+    jint result = JNI_ERR;
+    ENTER();
+    UVCCamera2 *camera = reinterpret_cast<UVCCamera2 *>(id_camera);
+    if (LIKELY(camera)) {
+        result = camera->stopInspection(env);
+    }
+    RETURN(result, jint);
+}
+
+static jint nativeSetInspectionFrameCallback(JNIEnv *env, jobject thiz,
+                                             ID_TYPE id_camera, jobject jIFrameCallback) {
+
+    jint result = JNI_ERR;
+    ENTER();
+    UVCCamera2 *camera = reinterpret_cast<UVCCamera2 *>(id_camera);
+    if (LIKELY(camera)) {
+        jobject frame_callback_obj = env->NewGlobalRef(jIFrameCallback);
+        result = camera->setInspectionFrameCallback(env, frame_callback_obj);
+    }
+    RETURN(result, jint);
+}
+
 static jint nativeSetCaptureDisplay(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera, jobject jSurface) {
 
@@ -2029,7 +2064,11 @@ static JNINativeMethod methods[] = {
 	{ "nativeSetPreviewDisplay",		"(JLandroid/view/Surface;)I", (void *) nativeSetPreviewDisplay },
 	{ "nativeSetFrameCallback",			"(JLcom/serenegiant/usb/IFrameCallback;I)I", (void *) nativeSetFrameCallback },
 
-	{ "nativeSetCaptureDisplay",		"(JLandroid/view/Surface;)I", (void *) nativeSetCaptureDisplay },
+    { "nativeStartInspection",			"(J)I", (void *) nativeStartInspection },
+    { "nativeStopInspection",			"(J)I", (void *) nativeStopInspection },
+    { "nativeSetInspectionFrameCallback","(JLcom/serenegiant/usb/IInspectionFrameCallback;)I", (void *) nativeSetInspectionFrameCallback },
+
+    { "nativeSetCaptureDisplay",		"(JLandroid/view/Surface;)I", (void *) nativeSetCaptureDisplay },
 
 	{ "nativeGetCtrlSupports",			"(J)J", (void *) nativeGetCtrlSupports },
 	{ "nativeGetProcSupports",			"(J)J", (void *) nativeGetProcSupports },

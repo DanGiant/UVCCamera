@@ -229,15 +229,12 @@
         android:layout_weight="6"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_gravity="center_vertical"
         android:background="@color/BLACK" >
 
-        <com.serenegiant.widget.SimpleUVCCameraTextureView
-            android:id="@+id/inspect_view"
+        <android.opengl.GLSurfaceView
+            android:id="@+id/inspection_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:layout_gravity="center" />
+            android:layout_height="match_parent" />
 
     </LinearLayout>
 

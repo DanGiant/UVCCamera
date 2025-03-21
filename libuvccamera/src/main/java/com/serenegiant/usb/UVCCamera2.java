@@ -431,6 +431,35 @@ public class UVCCamera2 {
     	}
     }
 
+	/**
+	 * set inspection frame callback
+	 * @param callback
+	 */
+	public void setInspectionFrameCallback(final IInspectionFrameCallback callback) {
+		if (mNativePtr != 0) {
+			nativeSetInspectionFrameCallback(mNativePtr, callback);
+		}
+	}
+
+	/**
+	 * start inspection
+	 */
+	public synchronized void startInspection() {
+		if (mCtrlBlock != null) {
+			nativeStartInspection(mNativePtr);
+		}
+	}
+
+	/**
+	 * stop inspection
+	 */
+	public synchronized void stopInspection() {
+		setInspectionFrameCallback(null);
+		if (mCtrlBlock != null) {
+			nativeStopInspection(mNativePtr);
+		}
+	}
+
     /**
      * destroy UVCCamera2 object
      */
@@ -1046,6 +1075,11 @@ public class UVCCamera2 {
     private static final native int nativeStopPreview(final long id_camera);
     private static final native int nativeSetPreviewDisplay(final long id_camera, final Surface surface);
     private static final native int nativeSetFrameCallback(final long mNativePtr, final IFrameCallback callback, final int pixelFormat);
+
+	private static final native int nativeStartInspection(final long id_camera);
+	private static final native int nativeStopInspection(final long id_camera);
+	private static final native int nativeSetInspectionFrameCallback(final long mNativePtr, final IInspectionFrameCallback callback);
+
 
 //**********************************************************************
     /**

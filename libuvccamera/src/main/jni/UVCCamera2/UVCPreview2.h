@@ -55,6 +55,12 @@ typedef struct {
 	jmethodID onFrame;
 } Fields_iframecallback;
 
+typedef struct {
+    jmethodID onInspectionStart;
+    jmethodID onInspectionStop;
+    jmethodID onInspectionFrame;
+} Fields_IInspectionFrameCallback;
+
 uvc_frame_t* UVCFrameAllocate(size_t dataSize);
 void UVCFrameDeallocate(uvc_frame_t *frame);
 uvc_frame_t* UVCFrameDuplicate(uvc_frame_t *frame);
@@ -83,11 +89,19 @@ private:
 	pthread_mutex_t capture_mutex;
 	pthread_cond_t capture_sync;
 	uvc_frame_t *captureFrame;			// keep latest frame
+
 	jobject mFrameCallbackObj;
 	convFunc_t mFrameCallbackFunc;
 	Fields_iframecallback iframecallback_fields;
 	int mPixelFormat;
 	size_t callbackPixelBytes;
+
+    volatile bool mIsInspectionRunning;
+    int mInspectionFrameIndex;
+    jobject mInspectionFrameCallbackObj;
+    Fields_IInspectionFrameCallback iInspectionFrameCallback_fields;
+    uvc_frame_t* decoded_inspection_frame;
+
 // improve performance by reducing memory allocation
 	pthread_mutex_t pool_mutex;
 	ObjectArray<uvc_frame_t *> mFramePool;
@@ -106,6 +120,7 @@ private:
     void addFrameToStorage(uvc_frame_t *frame);
     pthread_mutex_t mFrameStorageMutex;
     ObjectPtrLoopBuffer<uvc_frame_t *, UVCFrameDuplicate, UVCFrameDeallocate> mFrameStorage;
+    ObjectPtrLoopBuffer<uvc_frame_t *, UVCFrameDuplicate, UVCFrameDeallocate> mInspectionFrames;
 
 //
 	void clearDisplay();
@@ -138,6 +153,9 @@ public:
 	int setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format);
 	int startPreview();
 	int stopPreview();
+    int setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj);
+    int startInspection(JNIEnv *env);
+    int stopInspection(JNIEnv *env);
 	inline const bool isCapturing() const;
 	int setCaptureDisplay(ANativeWindow *capture_window);
 };

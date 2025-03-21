@@ -69,12 +69,17 @@ UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 	previewFormat(WINDOW_FORMAT_RGBA_8888),
 	mIsRunning(false),
 	mIsCapturing(false),
+    mIsInspectionRunning(false),
 	captureFrame(NULL),
 	mFrameCallbackObj(NULL),
 	mFrameCallbackFunc(NULL),
+    mInspectionFrameCallbackObj(NULL),
 	callbackPixelBytes(2),
     mCameraFramePool(2 * MAX_FRAME_STORAGE, MAX_FRAME_DATA_SIZE),
-    mFrameStorage(MAX_FRAME_STORAGE)
+    mFrameStorage(MAX_FRAME_STORAGE),
+    mInspectionFrameIndex(0),
+    mInspectionFrames(MAX_FRAME_STORAGE),
+    decoded_inspection_frame(NULL)
 {
 
 	ENTER();
@@ -95,15 +100,32 @@ UVCPreview2::UVCPreview2(uvc_device_handle_t *devh)
 UVCPreview2::~UVCPreview2() {
 
 	ENTER();
-	if (mPreviewWindow)
-		ANativeWindow_release(mPreviewWindow);
-	mPreviewWindow = NULL;
-	if (mCaptureWindow)
-		ANativeWindow_release(mCaptureWindow);
-	mCaptureWindow = NULL;
+	if (mPreviewWindow) {
+        ANativeWindow_release(mPreviewWindow);
+        mPreviewWindow = NULL;
+    }
+	if (mCaptureWindow) {
+        ANativeWindow_release(mCaptureWindow);
+        mCaptureWindow = NULL;
+    }
 	clearPreviewFrame();
 	clearCaptureFrame();
 	clear_pool();
+
+    if (decoded_inspection_frame != NULL) {
+        recycle_frame(decoded_inspection_frame);
+        decoded_inspection_frame = NULL;
+    }
+
+    if (mIsInspectionRunning) {
+        pthread_mutex_lock(&mFrameStorageMutex);
+        {
+            mInspectionFrames.reset();
+            mIsInspectionRunning = false;
+        }
+        pthread_mutex_unlock(&mFrameStorageMutex);
+    }
+
 	pthread_mutex_destroy(&preview_mutex);
 	pthread_cond_destroy(&preview_sync);
 	pthread_mutex_destroy(&capture_mutex);
@@ -130,7 +152,7 @@ uvc_frame_t *UVCPreview2::get_frame(size_t data_bytes) {
 	}
 	pthread_mutex_unlock(&pool_mutex);
 	if UNLIKELY(!frame) {
-		LOGW("get_frame: allocate new frame");
+		LOGW("get_frame: allocate new frame: %zu bytes", data_bytes);
 		frame = uvc_allocate_frame(data_bytes);
 	}
 	return frame;
@@ -356,6 +378,7 @@ void UVCPreview2::callbackPixelFormatChanged() {
 		break;
 	  case PIXEL_FORMAT_YUV:
 		LOGI("PIXEL_FORMAT_YUV:");
+        mFrameCallbackFunc = uvc_any2yuyv;
 		callbackPixelBytes = sz * 2;
 		break;
 	  case PIXEL_FORMAT_RGB565:
@@ -477,6 +500,138 @@ int UVCPreview2::stopPreview() {
 	}
 	pthread_mutex_unlock(&capture_mutex);
 	RETURN(0, int);
+}
+
+int UVCPreview2::setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj) {
+    ENTER();
+    pthread_mutex_lock(&mFrameStorageMutex);
+    {
+        if (!env->IsSameObject(mInspectionFrameCallbackObj, frame_callback_obj))	{
+
+            iInspectionFrameCallback_fields.onInspectionStart = NULL;
+            iInspectionFrameCallback_fields.onInspectionStop  = NULL;
+            iInspectionFrameCallback_fields.onInspectionFrame = NULL;
+
+            if (mInspectionFrameCallbackObj) {
+                env->DeleteGlobalRef(mInspectionFrameCallbackObj);
+            }
+            mInspectionFrameCallbackObj = frame_callback_obj;
+            if (frame_callback_obj) {
+                // get method IDs of Java object for callback
+                jclass clazz = env->GetObjectClass(frame_callback_obj);
+                if (LIKELY(clazz)) {
+                    iInspectionFrameCallback_fields.onInspectionStart =
+                            env->GetMethodID(clazz, "onInspectionStart",	"(I)V");
+                    iInspectionFrameCallback_fields.onInspectionStop =
+                            env->GetMethodID(clazz, "onInspectionStop",	"()V");
+                    iInspectionFrameCallback_fields.onInspectionFrame =
+                            env->GetMethodID(clazz, "onInspectionFrame",	"(Ljava/nio/ByteBuffer;II)V");
+                } else {
+                    LOGW("failed to get object class for IInspectionFrameCallback");
+                }
+                env->ExceptionClear();
+                if (!iInspectionFrameCallback_fields.onInspectionStart
+                    || !iInspectionFrameCallback_fields.onInspectionStop
+                    || !iInspectionFrameCallback_fields.onInspectionFrame)
+                {
+                    LOGE("Can't find IInspectionFrameCallback#onInspectionFrame");
+                    env->DeleteGlobalRef(frame_callback_obj);
+                    mInspectionFrameCallbackObj = frame_callback_obj = NULL;
+                    iInspectionFrameCallback_fields.onInspectionStart = NULL;
+                    iInspectionFrameCallback_fields.onInspectionStop  = NULL;
+                    iInspectionFrameCallback_fields.onInspectionFrame = NULL;
+                }
+            }
+        }
+        if (frame_callback_obj) {
+            mPixelFormat = PIXEL_FORMAT_YUV;
+            callbackPixelFormatChanged();
+        }
+    }
+    pthread_mutex_unlock(&mFrameStorageMutex);
+    RETURN(0, int);
+}
+
+int UVCPreview2::startInspection(JNIEnv *env) {
+    ENTER();
+
+    if (isRunning() && !mIsInspectionRunning) {
+        pthread_mutex_lock(&mFrameStorageMutex);
+        {
+            mInspectionFrames.reset();
+            mInspectionFrames = mFrameStorage;
+            mIsInspectionRunning = true;
+            mInspectionFrameIndex = 0;
+        }
+        pthread_mutex_unlock(&mFrameStorageMutex);
+
+        if (env != NULL) {
+            env->CallVoidMethod(mInspectionFrameCallbackObj,
+                                iInspectionFrameCallback_fields.onInspectionStart,
+                                mInspectionFrames.count());
+            env->ExceptionClear();
+
+            if (mInspectionFrames.count() > 0) {
+                uvc_frame_t* frame = mInspectionFrames[mInspectionFrameIndex];
+
+                if (mFrameCallbackFunc) {
+                    if (decoded_inspection_frame == NULL) {
+                        decoded_inspection_frame = get_frame(callbackPixelBytes);
+                    } else if (decoded_inspection_frame->data_bytes < callbackPixelBytes) {
+                        recycle_frame(decoded_inspection_frame);
+                        decoded_inspection_frame = get_frame(callbackPixelBytes);
+                    }
+
+                    if (LIKELY(decoded_inspection_frame)) {
+                        LOGW("inspection frame: will convert");
+                        uvc_error_t err = mFrameCallbackFunc(frame, decoded_inspection_frame);
+                        LOGW("inspection frame: convert result %d", (int)err);
+                        if (err == UVC_SUCCESS) {
+                            jobject frameBuffer = env->NewDirectByteBuffer(decoded_inspection_frame->data,
+                                                                           callbackPixelBytes);
+                            env->CallVoidMethod(mInspectionFrameCallbackObj,
+                                                iInspectionFrameCallback_fields.onInspectionFrame,
+                                                frameBuffer, 0,
+                                                mInspectionFrameIndex);
+                            env->ExceptionClear();
+                            env->DeleteLocalRef(frameBuffer);
+                        }
+                    }
+                }
+
+
+//                jobject frameBuffer = env->NewDirectByteBuffer(frame->data, frame->actual_bytes);
+//                env->CallVoidMethod(mInspectionFrameCallbackObj,
+//                                    iInspectionFrameCallback_fields.onInspectionFrame,
+//                                    frameBuffer,
+//                                    (frame->frame_format == UVC_FRAME_FORMAT_MJPEG) ? 1 : 0,
+//                                    mInspectionFrameIndex);
+//                env->ExceptionClear();
+//                env->DeleteLocalRef(frameBuffer);
+            }
+        }
+    }
+    RETURN(0, int);
+}
+
+int UVCPreview2::stopInspection(JNIEnv *env) {
+    ENTER();
+
+    if (isRunning() && mIsInspectionRunning) {
+        pthread_mutex_lock(&mFrameStorageMutex);
+        {
+            mInspectionFrames.reset();
+            mIsInspectionRunning = false;
+        }
+        pthread_mutex_unlock(&mFrameStorageMutex);
+
+        if (env != NULL) {
+            env->CallVoidMethod(mInspectionFrameCallbackObj,
+                                iInspectionFrameCallback_fields.onInspectionStop);
+            env->ExceptionClear();
+        }
+    }
+    RETURN(0, int);
 }
 
 //**********************************************************************

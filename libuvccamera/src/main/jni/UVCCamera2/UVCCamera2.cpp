@@ -291,6 +291,33 @@ int UVCCamera2::stopPreview() {
 	RETURN(0, int);
 }
 
+int UVCCamera2::setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj) {
+    ENTER();
+    int result = EXIT_FAILURE;
+    if (mPreview) {
+        result = mPreview->setInspectionFrameCallback(env, frame_callback_obj);
+    }
+    RETURN(result, int);
+}
+
+int UVCCamera2::startInspection(JNIEnv *env) {
+    ENTER();
+
+    int result = EXIT_FAILURE;
+    if (mDeviceHandle) {
+        return mPreview->startInspection(env);
+    }
+    RETURN(result, int);
+}
+
+int UVCCamera2::stopInspection(JNIEnv *env) {
+    ENTER();
+    if (LIKELY(mPreview)) {
+        mPreview->stopInspection(env);
+    }
+    RETURN(0, int);
+}
+
 int UVCCamera2::setCaptureDisplay(ANativeWindow *capture_window) {
 	ENTER();
 	int result = EXIT_FAILURE;

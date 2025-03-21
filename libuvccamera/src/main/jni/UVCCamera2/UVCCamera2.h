@@ -195,6 +195,10 @@ public:
 	int stopPreview();
 	int setCaptureDisplay(ANativeWindow *capture_window);
 
+    int setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj);
+    int startInspection(JNIEnv *env);
+    int stopInspection(JNIEnv *env);
+
 	int getCtrlSupports(uint64_t *supports);
 	int getProcSupports(uint64_t *supports);
 
