@@ -155,7 +155,7 @@
                     android:layout_gravity="center" />
 
                 <TextView
-                    android:id="@+id/record_frame_num"
+                    android:id="@+id/inspect_frame_num"
                     android:layout_weight="1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -164,7 +164,7 @@
                     android:textSize="15sp"
                     android:textColor="@color/BLACK"
                     android:textAlignment="center"
-                    android:text="300" />
+                    android:text="0/0" />
 
                 <Button
                     android:id="@+id/forward_button"

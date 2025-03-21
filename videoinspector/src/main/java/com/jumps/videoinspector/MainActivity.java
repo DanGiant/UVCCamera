@@ -15,6 +15,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.serenegiant.common.BaseActivity;
@@ -47,9 +48,14 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private Surface mPreviewSurface;
 
 	private Button mInspectionButton;
+	private Button mPrevFrameButton;
+	private Button mNextFrameButton;
 
 	private GLSurfaceView mInspectionView;
 	private YUYVRenderer mYUYVRenderer;
+	private int mCurInspectionFrameIndex = 0;
+	private int mTotalInspectionFramesCount = 0;
+	private TextView mInspectionFramesText;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -76,6 +82,36 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 				synchronized (mSync) {
 					if (mUVCCamera != null) {
 						mUVCCamera.startInspection();
+					}
+				}
+			}
+		});
+
+		mInspectionFramesText = (TextView) findViewById(R.id.inspect_frame_num);
+
+		mPrevFrameButton = (Button) findViewById(R.id.backward_button);
+		mPrevFrameButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				synchronized (mSync) {
+					if (mUVCCamera != null) {
+						if (mCurInspectionFrameIndex > 0) {
+							mUVCCamera.getInspectionFrameAt(mCurInspectionFrameIndex-1);
+						}
+					}
+				}
+			}
+		});
+
+		mNextFrameButton = (Button) findViewById(R.id.forward_button);
+		mNextFrameButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				synchronized (mSync) {
+					if (mUVCCamera != null) {
+						if (mCurInspectionFrameIndex < mTotalInspectionFramesCount) {
+							mUVCCamera.getInspectionFrameAt(mCurInspectionFrameIndex+1);
+						}
 					}
 				}
 			}
@@ -347,6 +383,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		@Override
 		public void onInspectionStart(int totalFrames) {
 			Log.d(TAG, "onInspectionStart: total frames=" + totalFrames);
+			mTotalInspectionFramesCount = totalFrames;
 		}
 
 		@Override
@@ -355,9 +392,17 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 		}
 
 		@Override
-		public void onInspectionFrame(ByteBuffer frame, int frameFormat, int index) {
+		public void onInspectionFrame(ByteBuffer frame, int frameFormat, int frameIndex) {
 
-			Log.d(TAG, "onInspectionFrame: pixelFormat=" + frameFormat + ", index=" + index);
+			Log.d(TAG, "onInspectionFrame: pixelFormat=" + frameFormat + ", frameIndex=" + frameIndex);
+			mCurInspectionFrameIndex = frameIndex;
+			final String frameInfo = (mCurInspectionFrameIndex+1)+ "/" + mTotalInspectionFramesCount;
+			mInspectionFramesText.post(new Runnable() {
+				@Override
+				public void run() {
+					mInspectionFramesText.setText(frameInfo);
+				}
+			});
 
 			if (frame.remaining() <= 0) {
 				Log.e(TAG, "onInspectionFrame: No data!!!");
@@ -369,7 +414,7 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 
 //			writeFile(getApplicationContext(), data);
 
-			Log.d(TAG, "onInspectionFrame: frame bytes:" + data.length + ", pixelFormat=" + frameFormat + ", index=" + index);
+			Log.d(TAG, "onInspectionFrame: frame bytes:" + data.length + ", pixelFormat=" + frameFormat + ", frameIndex=" + frameIndex);
 
 			if (frameFormat == UVCCamera2.FRAME_FORMAT_YUYV) {
 				if (data != null && data.length > 0) {

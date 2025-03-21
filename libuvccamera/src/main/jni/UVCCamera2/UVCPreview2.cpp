@@ -634,6 +634,43 @@ int UVCPreview2::stopInspection(JNIEnv *env) {
     RETURN(0, int);
 }
 
+int UVCPreview2::getInspectionFrameAt(JNIEnv *env, int frameIndex) {
+    ENTER();
+
+    if (isRunning() && mIsInspectionRunning && env != NULL) {
+        if (mInspectionFrames.count() > 0 && frameIndex >= 0 && frameIndex < mInspectionFrames.count()) {
+            mInspectionFrameIndex = frameIndex;
+            uvc_frame_t* frame = mInspectionFrames[mInspectionFrameIndex];
+
+            if (mFrameCallbackFunc) {
+                if (decoded_inspection_frame == NULL) {
+                    decoded_inspection_frame = get_frame(callbackPixelBytes);
+                } else if (decoded_inspection_frame->data_bytes < callbackPixelBytes) {
+                    recycle_frame(decoded_inspection_frame);
+                    decoded_inspection_frame = get_frame(callbackPixelBytes);
+                }
+
+                if (LIKELY(decoded_inspection_frame)) {
+                    LOGW("inspection frame: will convert");
+                    uvc_error_t err = mFrameCallbackFunc(frame, decoded_inspection_frame);
+                    LOGW("inspection frame: convert result %d", (int)err);
+                    if (err == UVC_SUCCESS) {
+                        jobject frameBuffer = env->NewDirectByteBuffer(decoded_inspection_frame->data,
+                                                                       callbackPixelBytes);
+                        env->CallVoidMethod(mInspectionFrameCallbackObj,
+                                            iInspectionFrameCallback_fields.onInspectionFrame,
+                                            frameBuffer, 0,
+                                            mInspectionFrameIndex);
+                        env->ExceptionClear();
+                        env->DeleteLocalRef(frameBuffer);
+                    }
+                }
+            }
+        }
+    }
+    RETURN(0, int);
+}
+
 //**********************************************************************
 //
 //**********************************************************************

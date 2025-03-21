@@ -460,6 +460,15 @@ public class UVCCamera2 {
 		}
 	}
 
+	/**
+	 * stop inspection
+	 */
+	public synchronized void getInspectionFrameAt(int index) {
+		if (mCtrlBlock != null) {
+			nativeGetInspectionFrameAt(mNativePtr, index);
+		}
+	}
+
     /**
      * destroy UVCCamera2 object
      */
@@ -1079,7 +1088,7 @@ public class UVCCamera2 {
 	private static final native int nativeStartInspection(final long id_camera);
 	private static final native int nativeStopInspection(final long id_camera);
 	private static final native int nativeSetInspectionFrameCallback(final long mNativePtr, final IInspectionFrameCallback callback);
-
+	private static final native int nativeGetInspectionFrameAt(final long id_camera, int index);
 
 //**********************************************************************
     /**

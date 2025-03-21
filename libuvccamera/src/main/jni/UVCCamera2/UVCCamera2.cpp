@@ -300,6 +300,14 @@ int UVCCamera2::setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_o
     RETURN(result, int);
 }
 
+int UVCCamera2::getInspectionFrameAt(JNIEnv *env, int frameIndex) {
+        ENTER();
+        if (LIKELY(mPreview)) {
+            mPreview->getInspectionFrameAt(env, frameIndex);
+        }
+        RETURN(0, int);
+}
+
 int UVCCamera2::startInspection(JNIEnv *env) {
     ENTER();
 

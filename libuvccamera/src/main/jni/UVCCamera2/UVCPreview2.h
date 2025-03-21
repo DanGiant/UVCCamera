@@ -154,6 +154,7 @@ public:
 	int startPreview();
 	int stopPreview();
     int setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj);
+    int getInspectionFrameAt(JNIEnv *env, int frameIndex);
     int startInspection(JNIEnv *env);
     int stopInspection(JNIEnv *env);
 	inline const bool isCapturing() const;

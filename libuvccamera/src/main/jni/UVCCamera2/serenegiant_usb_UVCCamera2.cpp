@@ -311,6 +311,17 @@ static jint nativeSetInspectionFrameCallback(JNIEnv *env, jobject thiz,
     RETURN(result, jint);
 }
 
+static jint nativeGetInspectionFrameAt(JNIEnv *env, jobject thiz,
+                                       ID_TYPE id_camera, jint frameIndex) {
+    jint result = JNI_ERR;
+    ENTER();
+    UVCCamera2 *camera = reinterpret_cast<UVCCamera2 *>(id_camera);
+    if (LIKELY(camera)) {
+        result = camera->getInspectionFrameAt(env, frameIndex);
+    }
+    RETURN(result, jint);
+}
+
 static jint nativeSetCaptureDisplay(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera, jobject jSurface) {
 
@@ -2067,6 +2078,7 @@ static JNINativeMethod methods[] = {
     { "nativeStartInspection",			"(J)I", (void *) nativeStartInspection },
     { "nativeStopInspection",			"(J)I", (void *) nativeStopInspection },
     { "nativeSetInspectionFrameCallback","(JLcom/serenegiant/usb/IInspectionFrameCallback;)I", (void *) nativeSetInspectionFrameCallback },
+    { "nativeGetInspectionFrameAt",		"(JI)I", (void *) nativeGetInspectionFrameAt },
 
     { "nativeSetCaptureDisplay",		"(JLandroid/view/Surface;)I", (void *) nativeSetCaptureDisplay },
 

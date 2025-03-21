@@ -198,6 +198,7 @@ public:
     int setInspectionFrameCallback(JNIEnv *env, jobject frame_callback_obj);
     int startInspection(JNIEnv *env);
     int stopInspection(JNIEnv *env);
+    int getInspectionFrameAt(JNIEnv *env, int frameIndex);
 
 	int getCtrlSupports(uint64_t *supports);
 	int getProcSupports(uint64_t *supports);
