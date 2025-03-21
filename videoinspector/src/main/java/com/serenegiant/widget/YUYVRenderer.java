@@ -2,6 +2,7 @@ package com.serenegiant.widget;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -22,13 +23,19 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     private int mYUYVWidth;
     private int mYUYVHeight;
     private ByteBuffer mYUYVBuffer;
+    private float mYUYVAspectRatio = 1.0f;
 
+    private final float[] mProjectionMatrix = new float[16];
+    private final float[] mViewMatrix = new float[16];
+    private final float[] mMvpMatrix = new float[16];
+    private int mvpMatrixHandle;
     private final String vertexShaderCode =
+            "uniform mat4 uMVPMatrix;\n" +
             "attribute vec4 aPosition;\n" +
             "attribute vec2 aTexCoord;\n" +
             "varying vec2 vTexCoord;\n" +
             "void main() {\n" +
-            "  gl_Position = aPosition;\n" +
+            "  gl_Position = uMVPMatrix * aPosition;\n" +
             "  vTexCoord = aTexCoord;\n" +
             "}\n";
 
@@ -53,6 +60,7 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
 
         mYUYVWidth = width;
         mYUYVHeight = height;
+        mYUYVAspectRatio = (float) width / height;
         mYUYVBuffer = ByteBuffer.allocateDirect(width * height * 2);
         mYUYVBuffer.order(ByteOrder.nativeOrder());
 
@@ -127,6 +135,9 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
             return;
         }
 
+        // 获取着色器程序中的变量句柄
+        mvpMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+
         int[] yTextures = new int[1];
         GLES20.glGenTextures(1, yTextures, 0);
 
@@ -150,14 +161,41 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
+
+        // 计算投影矩阵
+        float viewAspectRatio = (float) width / height;
+        if (viewAspectRatio > mYUYVAspectRatio) {
+            // 视图比图像宽，上下留黑边
+            Matrix.orthoM(mProjectionMatrix, 0,
+                    -viewAspectRatio / mYUYVAspectRatio,
+                    viewAspectRatio / mYUYVAspectRatio,
+                    -1, 1,
+                    -1, 1);
+        } else {
+            // 视图比图像高，左右留黑边
+            Matrix.orthoM(mProjectionMatrix, 0,
+                    -1, 1,
+                    -mYUYVAspectRatio / viewAspectRatio,
+                    mYUYVAspectRatio / viewAspectRatio,
+                    -1, 1);
+        }
+
+        // 设置视图矩阵
+        Matrix.setIdentityM(mViewMatrix, 0);
+        Matrix.multiplyMM(mMvpMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        // 清除屏幕
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
+        // 使用着色器程序
         GLES20.glUseProgram(mProgram);
         checkGlError("glUseProgram");
+
+        // 传递 MVP 矩阵
+        GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mMvpMatrix, 0);
 
         int positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition");
         checkGlError("glGetAttribLocation aPosition");
