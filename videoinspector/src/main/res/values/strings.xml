@@ -17,4 +17,7 @@
     <string name="flip_horz">flip horizontally</string>
     <string name="flip_vert">flip vertically</string>
 
+    <string name="dec_brightness">inc brightness</string>
+    <string name="inc_brightness">dec brightness</string>
+
 </resources>

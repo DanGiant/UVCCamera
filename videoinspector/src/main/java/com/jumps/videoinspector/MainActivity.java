@@ -57,6 +57,11 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private Button mFlipHorzButton;
 	private Button mFlipVertButton;
 
+	private Button mDecBrightButton;
+	private Button mIncBrightButton;
+
+	private int mBrightnessAdjust = 0;
+
 	private GLSurfaceView mInspectionView;
 	private YUYVRenderer mYUYVRenderer;
 	private int mCurInspectionFrameIndex = 0;
@@ -181,6 +186,36 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 				if (mTotalInspectionFramesCount > 0) {
 					boolean flipVert = mYUYVRenderer.getFlipVertical();
 					mYUYVRenderer.setFlipVertical(!flipVert);
+				}
+			}
+		});
+
+		// decrease brightness button
+		mDecBrightButton = (Button) findViewById(R.id.dec_brightness_button);
+		mDecBrightButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					if (mBrightnessAdjust > -32) {
+						mBrightnessAdjust--;
+						float brightness = 1.0f + (0.5f / 32) * mBrightnessAdjust;
+						mYUYVRenderer.setBrightness(brightness);
+					}
+				}
+			}
+		});
+
+		// decrease brightness button
+		mIncBrightButton = (Button) findViewById(R.id.inc_brightness_button);
+		mIncBrightButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					if (mBrightnessAdjust < 32) {
+						mBrightnessAdjust++;
+						float brightness = 1.0f + (0.5f / 32) * mBrightnessAdjust;
+						mYUYVRenderer.setBrightness(brightness);
+					}
 				}
 			}
 		});

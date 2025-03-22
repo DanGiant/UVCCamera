@@ -17,4 +17,6 @@
     <string name="flip_horz">水平镜像</string>
     <string name="flip_vert">垂直镜像</string>
 
+    <string name="dec_brightness">变暗</string>
+    <string name="inc_brightness">变亮</string>
 </resources>

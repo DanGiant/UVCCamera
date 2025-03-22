@@ -36,6 +36,8 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     private boolean mFlipHorizontal = false;
     private boolean mFlipVertical = false;
     private int mvpMatrixHandle;
+    private float mBrightness = 1.0f; // 亮度调整参数，默认值为 1.0
+
     private final String vertexShaderCode =
             "uniform mat4 uMVPMatrix;\n" +
             "attribute vec4 aPosition;\n" +
@@ -51,9 +53,11 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
             "varying vec2 vTexCoord;\n" +
             "uniform sampler2D y_texture;\n" +
             "uniform sampler2D uv_texture;\n" +
+            "uniform float uBrightness;\n" +
             "void main() {\n" +
             "   vec3 yuv;\n" +
             "   yuv.x = texture2D(y_texture, vTexCoord).r - 0.063;\n" +
+            "   yuv.x = yuv.x * uBrightness;\n" +
             "   vec4 yuyv = texture2D(uv_texture, vTexCoord);\n" +
             "   yuv.y = yuyv.g - 0.502;\n" +
             "   yuv.z = yuyv.a - 0.502;\n" +
@@ -269,6 +273,10 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
             GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mMvpMatrix, 0);
         }
 
+        // 传递亮度参数
+        int brightnessHandle = GLES20.glGetUniformLocation(mProgram, "uBrightness");
+        checkGlError("glGetAttribLocation uBrightness");
+        GLES20.glUniform1f(brightnessHandle, mBrightness);
 
         int positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition");
         checkGlError("glGetAttribLocation aPosition");
@@ -358,5 +366,10 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
 
     public boolean getFlipVertical() {
         return mFlipVertical;
+    }
+
+    public void setBrightness(float brightness) {
+        // 设置亮度参数
+        mBrightness = brightness;
     }
 }

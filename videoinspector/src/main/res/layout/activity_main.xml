@@ -220,6 +220,30 @@
                     android:layout_gravity="center" />
             </LinearLayout>
 
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="35dp" >
+                <Button
+                    android:id="@+id/dec_brightness_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/dec_brightness"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+                <Button
+                    android:id="@+id/inc_brightness_button"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/inc_brightness"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/black"
+                    android:layout_gravity="center" />
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>
