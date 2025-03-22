@@ -51,6 +51,9 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private Button mPrevFrameButton;
 	private Button mNextFrameButton;
 
+	private Button mRotateClockwiseButton;
+	private Button mRotateCounterClockwiseButton;
+
 	private GLSurfaceView mInspectionView;
 	private YUYVRenderer mYUYVRenderer;
 	private int mCurInspectionFrameIndex = 0;
@@ -113,6 +116,44 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 							mUVCCamera.getInspectionFrameAt(mCurInspectionFrameIndex+1);
 						}
 					}
+				}
+			}
+		});
+
+		mRotateClockwiseButton = (Button) findViewById(R.id.rotate_clockwise_button);
+		mRotateClockwiseButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					YUYVRenderer.Rotation rotation = mYUYVRenderer.getRotation();
+					if (rotation == YUYVRenderer.Rotation.Rotate_0)
+						rotation = YUYVRenderer.Rotation.Rotate_270;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_270)
+						rotation = YUYVRenderer.Rotation.Rotate_180;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_180)
+						rotation = YUYVRenderer.Rotation.Rotate_90;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_90)
+						rotation = YUYVRenderer.Rotation.Rotate_0;
+					mYUYVRenderer.setRotation(rotation);
+				}
+			}
+		});
+
+		mRotateCounterClockwiseButton = (Button) findViewById(R.id.rotate_counterclockwise_button);
+		mRotateCounterClockwiseButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					YUYVRenderer.Rotation rotation = mYUYVRenderer.getRotation();
+					if (rotation == YUYVRenderer.Rotation.Rotate_0)
+						rotation = YUYVRenderer.Rotation.Rotate_90;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_90)
+						rotation = YUYVRenderer.Rotation.Rotate_180;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_180)
+						rotation = YUYVRenderer.Rotation.Rotate_270;
+					else if (rotation == YUYVRenderer.Rotation.Rotate_270)
+						rotation = YUYVRenderer.Rotation.Rotate_0;
+					mYUYVRenderer.setRotation(rotation);
 				}
 			}
 		});

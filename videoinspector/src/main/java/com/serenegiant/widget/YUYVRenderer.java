@@ -23,11 +23,14 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     private int mYUYVWidth;
     private int mYUYVHeight;
     private ByteBuffer mYUYVBuffer;
-    private float mYUYVAspectRatio = 1.0f;
+
+    private int mViewWidth;
+    private int mViewHeight;
 
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
     private final float[] mMvpMatrix = new float[16];
+    private Rotation mRotation = Rotation.Rotate_0;
     private int mvpMatrixHandle;
     private final String vertexShaderCode =
             "uniform mat4 uMVPMatrix;\n" +
@@ -56,11 +59,18 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
             "   gl_FragColor = vec4(rgb, 1.0);\n" +
             "}\n";
 
+    public enum Rotation {
+        Rotate_0,
+        Rotate_90,
+        Rotate_180,
+        Rotate_270
+    };
+
     public YUYVRenderer(int width, int height) {
 
         mYUYVWidth = width;
         mYUYVHeight = height;
-        mYUYVAspectRatio = (float) width / height;
+
         mYUYVBuffer = ByteBuffer.allocateDirect(width * height * 2);
         mYUYVBuffer.order(ByteOrder.nativeOrder());
 
@@ -160,29 +170,9 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        GLES20.glViewport(0, 0, width, height);
-
-        // 计算投影矩阵
-        float viewAspectRatio = (float) width / height;
-        if (viewAspectRatio > mYUYVAspectRatio) {
-            // 视图比图像宽，上下留黑边
-            Matrix.orthoM(mProjectionMatrix, 0,
-                    -viewAspectRatio / mYUYVAspectRatio,
-                    viewAspectRatio / mYUYVAspectRatio,
-                    -1, 1,
-                    -1, 1);
-        } else {
-            // 视图比图像高，左右留黑边
-            Matrix.orthoM(mProjectionMatrix, 0,
-                    -1, 1,
-                    -mYUYVAspectRatio / viewAspectRatio,
-                    mYUYVAspectRatio / viewAspectRatio,
-                    -1, 1);
-        }
-
-        // 设置视图矩阵
-        Matrix.setIdentityM(mViewMatrix, 0);
-        Matrix.multiplyMM(mMvpMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        mViewWidth = width;
+        mViewHeight = height;
+        GLES20.glViewport(0, 0, mViewWidth, mViewHeight);
     }
 
     @Override
@@ -194,8 +184,59 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
         GLES20.glUseProgram(mProgram);
         checkGlError("glUseProgram");
 
-        // 传递 MVP 矩阵
-        GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mMvpMatrix, 0);
+        int rotateDegree = 0;
+        if (mRotation == Rotation.Rotate_90)
+            rotateDegree = 90;
+        else if (mRotation == Rotation.Rotate_180)
+            rotateDegree = 180;
+        else if (mRotation == Rotation.Rotate_270)
+            rotateDegree = 270;
+
+        // 计算投影矩阵
+        float viewAspectRatio = (float) mViewWidth / mViewHeight;
+        float yuyvAspectRatio = 0.0f;
+        if (rotateDegree == 0 || rotateDegree == 180) {
+            yuyvAspectRatio = (float) mYUYVWidth / mYUYVHeight;
+        } else {
+            yuyvAspectRatio = (float) mYUYVHeight / mYUYVWidth;
+        }
+        if (viewAspectRatio > yuyvAspectRatio) {
+            // 视图比图像宽，上下留黑边
+            Matrix.orthoM(mProjectionMatrix, 0,
+                    -viewAspectRatio / yuyvAspectRatio,
+                    viewAspectRatio / yuyvAspectRatio,
+                    -1, 1,
+                    -1, 1);
+        } else {
+            // 视图比图像高，左右留黑边
+            Matrix.orthoM(mProjectionMatrix, 0,
+                    -1, 1,
+                    -yuyvAspectRatio / viewAspectRatio,
+                    yuyvAspectRatio / viewAspectRatio,
+                    -1, 1);
+        }
+
+        // 设置视图矩阵
+        Matrix.setIdentityM(mViewMatrix, 0);
+        Matrix.multiplyMM(mMvpMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+
+        if (rotateDegree > 0) {
+            // 初始化旋转矩阵
+            float[] rotationMatrix = new float[16];
+            Matrix.setIdentityM(rotationMatrix, 0);
+            Matrix.rotateM(rotationMatrix, 0, rotateDegree, 0, 0, 1); // 绕 Z 轴旋转 90 度
+
+            // 应用旋转矩阵
+            float[] finalMatrix = new float[16];
+            Matrix.multiplyMM(finalMatrix, 0, mMvpMatrix, 0, rotationMatrix, 0);
+
+            // 传递 MVP 矩阵
+            GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, finalMatrix, 0);
+        } else {
+            // 传递 MVP 矩阵
+            GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mMvpMatrix, 0);
+        }
+
 
         int positionHandle = GLES20.glGetAttribLocation(mProgram, "aPosition");
         checkGlError("glGetAttribLocation aPosition");
@@ -239,5 +280,25 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
         GLES20.glShaderSource(shader, shaderCode);
         GLES20.glCompileShader(shader);
         return shader;
+    }
+
+    public void setRotation(Rotation rotation) {
+        mRotation = rotation;
+        Log.d(TAG, "Rotation to " + rotationString(mRotation));
+    }
+
+    public Rotation getRotation() {
+        return mRotation;
+    }
+
+    private String rotationString(Rotation rotation) {
+        if (rotation == Rotation.Rotate_0)
+            return "Rotate_0";
+        else if (rotation == Rotation.Rotate_90)
+            return "Rotate_90";
+        else if (rotation == Rotation.Rotate_180)
+            return "Rotate_180";
+        else
+            return "Rotate_270";
     }
 }
