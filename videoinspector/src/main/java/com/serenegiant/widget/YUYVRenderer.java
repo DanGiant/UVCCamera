@@ -19,6 +19,8 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     private int m_uvTextureId;
     private FloatBuffer mVertexBuffer;
     private FloatBuffer mTexCoordBuffer;
+    private FloatBuffer mTexCoordBufferFlipHorz;
+    private FloatBuffer mTexCoordBufferFlipVert;
 
     private int mYUYVWidth;
     private int mYUYVHeight;
@@ -31,6 +33,8 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
     private final float[] mViewMatrix = new float[16];
     private final float[] mMvpMatrix = new float[16];
     private Rotation mRotation = Rotation.Rotate_0;
+    private boolean mFlipHorizontal = false;
+    private boolean mFlipVertical = false;
     private int mvpMatrixHandle;
     private final String vertexShaderCode =
             "uniform mat4 uMVPMatrix;\n" +
@@ -88,6 +92,22 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
                 1.0f, 0.0f
         };
 
+        // 水平镜像翻转的纹理坐标
+        float[] texCoordsFlipHorz = {
+                1.0f, 1.0f,  // 左下角
+                0.0f, 1.0f,  // 右下角
+                1.0f, 0.0f,  // 左上角
+                0.0f, 0.0f   // 右上角
+        };
+
+        // 垂直镜像翻转的纹理坐标
+        float[] texCoordsFlipVert = {
+                0.0f, 0.0f,  // 左下角
+                1.0f, 0.0f,  // 右下角
+                0.0f, 1.0f,  // 左上角
+                1.0f, 1.0f   // 右上角
+        };
+
         mVertexBuffer = ByteBuffer.allocateDirect(vertices.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
@@ -99,6 +119,18 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
                 .asFloatBuffer();
         mTexCoordBuffer.put(texCoords);
         mTexCoordBuffer.position(0);
+
+        mTexCoordBufferFlipHorz = ByteBuffer.allocateDirect(texCoordsFlipHorz.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        mTexCoordBufferFlipHorz.put(texCoordsFlipHorz);
+        mTexCoordBufferFlipHorz.position(0);
+
+        mTexCoordBufferFlipVert = ByteBuffer.allocateDirect(texCoordsFlipVert.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        mTexCoordBufferFlipVert.put(texCoordsFlipVert);
+        mTexCoordBufferFlipVert.position(0);
     }
 
     public void updateYUYVData(byte[] data) {
@@ -250,7 +282,15 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
         GLES20.glEnableVertexAttribArray(texCoordHandle);
         checkGlError("glEnableVertexAttribArray texCoordHandle");
 
-        GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexCoordBuffer);
+        if (mFlipHorizontal) {
+            GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexCoordBufferFlipHorz);
+        } else if (mFlipVertical) {
+            GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexCoordBufferFlipVert);
+        }
+        else {
+            GLES20.glVertexAttribPointer(texCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexCoordBuffer);
+        }
+
 
 
         //upload YUYV data
@@ -300,5 +340,23 @@ public class YUYVRenderer implements GLSurfaceView.Renderer {
             return "Rotate_180";
         else
             return "Rotate_270";
+    }
+
+    public void setFlipHorizontal(boolean flipHorizontal) {
+        mFlipVertical = false;
+        mFlipHorizontal = flipHorizontal;
+    }
+
+    public boolean getFlipHorizontal() {
+        return mFlipHorizontal;
+    }
+
+    public void setFlipVertical(boolean flipVertical) {
+        mFlipHorizontal = false;
+        mFlipVertical = flipVertical;
+    }
+
+    public boolean getFlipVertical() {
+        return mFlipVertical;
     }
 }

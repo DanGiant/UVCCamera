@@ -54,6 +54,9 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 	private Button mRotateClockwiseButton;
 	private Button mRotateCounterClockwiseButton;
 
+	private Button mFlipHorzButton;
+	private Button mFlipVertButton;
+
 	private GLSurfaceView mInspectionView;
 	private YUYVRenderer mYUYVRenderer;
 	private int mCurInspectionFrameIndex = 0;
@@ -154,6 +157,30 @@ public final class MainActivity extends BaseActivity implements CameraDialog.Cam
 					else if (rotation == YUYVRenderer.Rotation.Rotate_270)
 						rotation = YUYVRenderer.Rotation.Rotate_0;
 					mYUYVRenderer.setRotation(rotation);
+				}
+			}
+		});
+
+		// Flip horizontally button
+		mFlipHorzButton = (Button) findViewById(R.id.flip_horz_button);
+		mFlipHorzButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					boolean flipHorz = mYUYVRenderer.getFlipHorizontal();
+					mYUYVRenderer.setFlipHorizontal(!flipHorz);
+				}
+			}
+		});
+
+		// Flip horizontally button
+		mFlipVertButton = (Button) findViewById(R.id.flip_vert_button);
+		mFlipVertButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mTotalInspectionFramesCount > 0) {
+					boolean flipVert = mYUYVRenderer.getFlipVertical();
+					mYUYVRenderer.setFlipVertical(!flipVert);
 				}
 			}
 		});
